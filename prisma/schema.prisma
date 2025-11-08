@@ -1,0 +1,107 @@
+// =====================================================
+// ✅ Prisma Schema : Architecture Assurance Complète
+// =====================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =====================================================
+// ✅ Énums métiers
+// =====================================================
+enum Role {
+  GM
+  REGION_MANAGER
+  DELEGATE
+}
+
+enum MemberStatus {
+  ACTIVE
+  SUSPENDED
+  CANCELLED
+}
+
+// =====================================================
+// ✅ Utilisateur système (login + rôle + permissions)
+// =====================================================
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  role      Role
+
+  regionManager RegionManager?
+  delegateProfile Delegate?
+
+  createdAt DateTime @default(now())
+}
+
+// =====================================================
+// ✅ Région (ex : Sud, Nord,…)
+// =====================================================
+model Region {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  managers  RegionManager[]
+  delegates Delegate[]
+  createdAt DateTime @default(now())
+}
+
+// =====================================================
+// ✅ Responsable de région (gère les délégués)
+// =====================================================
+model RegionManager {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+
+  regionId  String
+  region    Region   @relation(fields: [regionId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([regionId])
+}
+
+// =====================================================
+// ✅ Délégué (gère les assurés)
+// =====================================================
+model Delegate {
+  id        String   @id @default(uuid())
+  name      String
+  phone     String?
+
+  regionId  String
+  region    Region   @relation(fields: [regionId], references: [id])
+
+  userId    String?  @unique
+  user      User?    @relation(fields: [userId], references: [id])
+
+  members   Member[]
+  createdAt DateTime @default(now())
+
+  @@index([regionId])
+}
+
+// =====================================================
+// ✅ Assuré (données métier — pas utilisateur du système)
+// =====================================================
+model Member {
+  id         String        @id @default(uuid())
+  cin        String        @unique
+  fullName   String
+  city       String?
+  status     MemberStatus  @default(ACTIVE)
+
+  delegateId String
+  delegate   Delegate      @relation(fields: [delegateId], references: [id])
+
+  createdAt  DateTime      @default(now())
+
+  @@index([delegateId])
+}
