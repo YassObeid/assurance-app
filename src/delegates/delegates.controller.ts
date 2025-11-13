@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Body, Param, Patch, Delete } from '@nestjs/common';
 import { DelegatesService } from './delegates.service';
+import { CreateDelegateDto } from './dto/create-delegate.dto';
 
 @Controller('delegates')
 export class DelegatesController {

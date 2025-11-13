@@ -1,7 +1,7 @@
-import { IsString, IsOptional } from 'class-validator';
+import { PartialType } from '@nestjs/mapped-types';
+import { CreateDelegateDto } from './create-delegate.dto';
+import { IsOptional, IsString } from 'class-validator';
 
-export class UpdateDelegateDto {
-  @IsOptional() @IsString() name?: string;
-  @IsOptional() @IsString() phone?: string;
-  @IsOptional() @IsString() regionId?: string;
+export class UpdateDelegateDto extends PartialType(CreateDelegateDto) {
+  
 }
