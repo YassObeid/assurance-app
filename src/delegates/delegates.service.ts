@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma.service';
 import { CreateDelegateDto } from './dto/create-delegate.dto';
 import { UpdateDelegateDto } from './dto/update-delegate.dto';
 import { IsOptional, IsString } from 'class-validator';
-
+import { currentRegionIdsForManager } from '../common/region-access.helper';
 
 @Injectable()
 export class DelegatesService {
@@ -92,4 +92,22 @@ export class DelegatesService {
   remove(id: string) {
     return this.prisma.delegate.delete({ where: { id } });
   }
+    // 👇 nouvelle méthode : lister les délégués visibles pour un manager donné
+  async findAllForManager(userId: string) {
+    const regionIds = await currentRegionIdsForManager(this.prisma, userId);
+
+    return this.prisma.delegate.findMany({
+      where: {
+        regionId: { in: regionIds },
+      },
+      include: {
+        region: true,
+        manager: { include: { user: true, region: true } },
+        user: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
 }
+
+

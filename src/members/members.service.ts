@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { QueryMemberDto } from './dto/query-member.dto';
+import { currentRegionIdsForManager } from '../common/region-access.helper';
 
 @Injectable()
 export class MembersService {
@@ -75,4 +76,7 @@ export class MembersService {
   remove(id: string) {
     return this.prisma.member.delete({ where: { id } });
   }
+  
+
+  
 }
