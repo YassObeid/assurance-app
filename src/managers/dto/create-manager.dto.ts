@@ -1,13 +1,14 @@
-import { IsUUID, IsOptional, IsISO8601 } from 'class-validator';
+import { IsString, IsOptional, IsDateString } from 'class-validator';
 
 export class CreateManagerDto {
-  @IsUUID()
-  userId!: string;    // id d'un User (role REGION_MANAGER)
+  @IsString()
+  userId: string;      // ID du user qui sera manager
 
-  @IsUUID()
-  regionId!: string;  // id d'une Region
+  @IsString()
+  regionId: string;    // ID de la région à gérer
 
   @IsOptional()
-  @IsISO8601()
-  startAt?: string;   // ISO date optionnelle
+  @IsDateString()
+  startAt?: string;    // optionnel, sinon on met "maintenant" côté service
 }
+
