@@ -39,6 +39,12 @@ export class UsersService {
 
     return user;
   }
+   // Utilisé par le login
+  findByEmail(email: string) {
+    return this.prisma.user.findUnique({ where: { email } });
+  }
+
+
 
   findAll() {
     return this.prisma.user.findMany({

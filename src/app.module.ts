@@ -7,9 +7,10 @@ import { MembersModule } from './members/members.module';
 import { RegionsModule } from './regions/regions.module';
 import { ManagersModule } from './managers/managers.module';
 import { UsersModule } from './users/users.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
-  imports: [PrismaModule, DelegatesModule, MembersModule, RegionsModule, ManagersModule, UsersModule],
+  imports: [PrismaModule, DelegatesModule, MembersModule, RegionsModule, ManagersModule, UsersModule, AuthModule],
   controllers: [AppController],
   providers: [AppService],
 })
