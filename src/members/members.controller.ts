@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Body, Param, Delete, Patch, Query, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Delete,
+  Patch,
+  Query,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { MembersService } from './members.service';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { QueryMemberDto } from './dto/query-member.dto';
@@ -12,15 +23,14 @@ import { Role } from '@prisma/client';
 export class MembersController {
   constructor(private readonly membersService: MembersService) {}
 
-  // Un délégué voit seulement SES membres (on utilisera req.user plus tard)
+  // Un délégué voit seulement SES membres, un region manager ceux de ses régions, le GM voit tout
   @Roles(Role.DELEGATE, Role.REGION_MANAGER, Role.GM)
   @Get()
   findAll(@Query() q: QueryMemberDto, @Req() req: any) {
     return this.membersService.findAll(q, req.user);
   }
 
-  // Création par un délégué (ou GM)
-  @Roles(Role.DELEGATE, Role.GM)
+  @Roles(Role.DELEGATE)
   @Post()
   create(@Body() dto: CreateMemberDto, @Req() req: any) {
     return this.membersService.create(dto, req.user);
@@ -34,7 +44,11 @@ export class MembersController {
 
   @Roles(Role.DELEGATE, Role.GM)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: CreateMemberDto, @Req() req: any) {
+  update(
+    @Param('id') id: string,
+    @Body() dto: CreateMemberDto,
+    @Req() req: any,
+  ) {
     return this.membersService.update(id, dto, req.user);
   }
 
@@ -44,4 +58,3 @@ export class MembersController {
     return this.membersService.remove(id, req.user);
   }
 }
-

@@ -6,6 +6,7 @@ import {
 import { PrismaService } from '../prisma.service';
 import { CreateManagerDto } from './dto/create-manager.dto';
 import { UpdateManagerDto } from './dto/update-manager.dto';
+import { UpdateManagerDto as RealUpdateManagerDto } from './dto/update-manager.dto';
 
 @Injectable()
 export class ManagersService {
@@ -19,16 +20,30 @@ export class ManagersService {
     ]);
 
     if (!user) {
-      throw new BadRequestException('userId inconnu');
+      throw new NotFoundException('Utilisateur introuvable');
     }
-    if (!region) {
-      throw new BadRequestException('regionId inconnu');
-    }
-
-    // (Option) Vérifier que le user a bien le rôle REGION_MANAGER
     if (user.role !== 'REGION_MANAGER') {
       throw new BadRequestException(
         'Le user doit avoir le rôle REGION_MANAGER',
+      );
+    }
+
+    if (!region) {
+      throw new NotFoundException('Région introuvable');
+    }
+
+    // Vérifier qu'il n'y a pas déjà une affectation active
+    const active = await this.prisma.regionManager.findFirst({
+      where: {
+        userId: dto.userId,
+        regionId: dto.regionId,
+        endAt: null,
+      },
+    });
+
+    if (active) {
+      throw new BadRequestException(
+        'Ce manager est déjà affecté à cette région (affectation active)',
       );
     }
 
@@ -43,56 +58,62 @@ export class ManagersService {
       include: {
         user: true,
         region: true,
+        delegates: true,
       },
     });
   }
 
-  findAll() {
+  async findAll() {
     return this.prisma.regionManager.findMany({
       include: {
         user: true,
         region: true,
+        delegates: true,
       },
-      orderBy: [{ regionId: 'asc' }, { startAt: 'desc' }],
+      orderBy: { startAt: 'desc' },
     });
   }
 
   async findOne(id: string) {
-    const row = await this.prisma.regionManager.findUnique({
+    const manager = await this.prisma.regionManager.findUnique({
       where: { id },
       include: {
         user: true,
         region: true,
-        delegates: true, // pratique : voir aussi les délégués de ce manager
+        delegates: true,
       },
     });
 
-    if (!row) {
+    if (!manager) {
       throw new NotFoundException('Manager introuvable');
     }
 
-    return row;
+    return manager;
   }
 
-  async update(id: string, dto: UpdateManagerDto) {
-    const data: any = { ...dto };
+  async update(id: string, dto: RealUpdateManagerDto) {
+    const existing = await this.prisma.regionManager.findUnique({
+      where: { id },
+    });
 
-    if (dto.startAt) data.startAt = new Date(dto.startAt);
-    if (dto.endAt) data.endAt = new Date(dto.endAt);
-
-    try {
-      return await this.prisma.regionManager.update({
-        where: { id },
-        data,
-        include: {
-          user: true,
-          region: true,
-          delegates: true,
-        },
-      });
-    } catch {
+    if (!existing) {
       throw new NotFoundException('Manager introuvable');
     }
+
+    const data: any = {};
+    if (dto.endAt !== undefined) {
+      data.endAt = dto.endAt ? new Date(dto.endAt) : null;
+    }
+
+    return this.prisma.regionManager.update({
+      where: { id },
+      data,
+      include: {
+        user: true,
+        region: true,
+        delegates: true,
+      },
+    });
   }
 
   async remove(id: string) {

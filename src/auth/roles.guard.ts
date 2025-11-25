@@ -1,4 +1,3 @@
-// src/auth/roles.guard.ts
 import {
   CanActivate,
   ExecutionContext,
@@ -14,17 +13,19 @@ export class RolesGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}
 
   canActivate(ctx: ExecutionContext): boolean {
-    // Rôles demandés sur la route (ex: [GM, REGION_MANAGER])
-    const requiredRoles = this.reflector.getAllAndOverride<Role[]>(ROLES_KEY, [
-      ctx.getHandler(),
-      ctx.getClass(),
-    ]);
+    // Rôles attendus sur la route (@Roles(...))
+    const requiredRoles =
+      this.reflector.getAllAndOverride<Role[]>(ROLES_KEY, [
+        ctx.getHandler(),
+        ctx.getClass(),
+      ]);
 
-    // S'il n'y a pas de rôles demandés → accès libre (mais JWT peut être exigé par ailleurs)
+    // Si rien n'est défini → pas de filtre
     if (!requiredRoles || requiredRoles.length === 0) {
       return true;
     }
 
+    // Récupération de l'utilisateur injecté par JwtStrategy
     const request = ctx.switchToHttp().getRequest();
     const user = request.user as { role?: Role };
 

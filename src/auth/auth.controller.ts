@@ -8,7 +8,10 @@ export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
   @Post('login')
-  login(@Body() dto: LoginDto) {
-    return this.auth.login(dto);
+  async login(@Body() dto: LoginDto) {
+    
+  const user = await this.auth.validateUser(dto.email, dto.password);
+  return this.auth.login(user);
+
   }
 }

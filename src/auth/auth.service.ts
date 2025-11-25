@@ -1,50 +1,59 @@
 // src/auth/auth.service.ts
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
-import { comparePassword } from '../common/user.helpers';
-import { LoginDto } from './dto/login.dto';
+import { PrismaService } from '../prisma.service';
+import { comparePassword } from '../common/user.helpers'; // on réutilise ton helper
+
+import { Role } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private usersService: UsersService,
-    private jwt: JwtService,
+    private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
   ) {}
 
-  // Vérifie email + mot de passe
-  async validateUser(email: string, password: string) {
-    const user = await this.usersService.findByEmail(email);
+  /**
+   * Vérifie email + mot de passe, renvoie l'utilisateur sans le password
+   */
+  public async validateUser(email: string, plainPassword: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) {
       throw new UnauthorizedException('Email ou mot de passe invalide');
     }
 
-    const ok = await comparePassword(password, user.password);
+    const ok = await comparePassword(plainPassword, user.password);
     if (!ok) {
       throw new UnauthorizedException('Email ou mot de passe invalide');
     }
 
-    return user;
+    const { password, ...safeUser } = user;
+    return safeUser;
   }
 
-  // Login → retourne un JWT
-  async login(dto: LoginDto) {
-    const user = await this.validateUser(dto.email, dto.password);
-
-    const payload = {
+    async login(user: { id: string; email: string; role: Role }) {
+    const payload: any = {
       sub: user.id,
-      role: user.role,
       email: user.email,
+      role: user.role,
     };
+
+    // Si c'est un délégué, on va chercher son delegateId
+    if (user.role === Role.DELEGATE) {
+      const delegate = await this.prisma.delegate.findFirst({
+        where: { userId: user.id },
+        select: { id: true },
+      });
+      if (delegate) {
+        payload.delegateId = delegate.id;
+      }
+    }
 
     return {
-      access_token: await this.jwt.signAsync(payload),
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
+      access_token: this.jwtService.sign(payload),
     };
-  }
+  
 }
+}
+
+

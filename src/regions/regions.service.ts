@@ -1,20 +1,23 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { CreateRegionDto } from './dto/create-region.dto';
 import { UpdateRegionDto } from './dto/update-region.dto';
-
 
 @Injectable()
 export class RegionsService {
   constructor(private prisma: PrismaService) {}
 
   async create(dto: CreateRegionDto) {
-    // Empêcher les doublons de nom
     const existing = await this.prisma.region.findUnique({
       where: { name: dto.name },
     });
+
     if (existing) {
-      throw new BadRequestException('Cette région existe déjà');
+      throw new BadRequestException('Une région avec ce nom existe déjà');
     }
 
     return this.prisma.region.create({
@@ -22,7 +25,7 @@ export class RegionsService {
     });
   }
 
-  findAll() {
+  async findAll() {
     return this.prisma.region.findMany({
       orderBy: { name: 'asc' },
     });
@@ -41,24 +44,24 @@ export class RegionsService {
   }
 
   async update(id: string, dto: UpdateRegionDto) {
-    // Si on change le nom, vérifier les doublons
-    if (dto.name) {
+    const region = await this.prisma.region.findUnique({ where: { id } });
+    if (!region) {
+      throw new NotFoundException('Région introuvable');
+    }
+
+    if (dto.name && dto.name !== region.name) {
       const existing = await this.prisma.region.findUnique({
         where: { name: dto.name },
       });
-      if (existing && existing.id !== id) {
-        throw new BadRequestException('Une autre région a déjà ce nom');
+      if (existing) {
+        throw new BadRequestException('Une région avec ce nom existe déjà');
       }
     }
 
-    try {
-      return await this.prisma.region.update({
-        where: { id },
-        data: dto,
-      });
-    } catch (e) {
-      throw new NotFoundException('Région introuvable');
-    }
+    return this.prisma.region.update({
+      where: { id },
+      data: dto,
+    });
   }
 
   async remove(id: string) {
@@ -72,4 +75,6 @@ export class RegionsService {
   }
 }
 
+
+  
 
