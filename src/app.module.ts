@@ -9,9 +9,11 @@ import { ManagersModule } from './managers/managers.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { PaymentsModule } from './payments/payments.module';
+import { ReportsModule } from './reports/reports.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [PrismaModule, DelegatesModule, MembersModule, RegionsModule, ManagersModule, UsersModule, AuthModule, PaymentsModule],
+  imports: [ConfigModule.forRoot({ isGlobal: true}),PrismaModule, DelegatesModule, MembersModule, RegionsModule, ManagersModule, UsersModule, AuthModule, PaymentsModule, ReportsModule],
   controllers: [AppController],
   providers: [AppService],
 })

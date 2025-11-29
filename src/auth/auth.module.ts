@@ -10,7 +10,7 @@ import { ConfigModule } from '@nestjs/config';
 @Module({
   imports: [
     UsersModule,
-    ConfigModule,
+    ConfigModule.forRoot({ isGlobal: true}),
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'change-me-in-prod',
       signOptions: {
