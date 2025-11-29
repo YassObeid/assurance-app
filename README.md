@@ -1,3 +1,4 @@
+```markdown
 📘 Assurance App – Backend NestJS (README Complet)
 # Assurance App – Backend NestJS
 
@@ -57,7 +58,7 @@ flowchart LR
   end
 
   subgraph DB[(PostgreSQL)]
-    Tables[User, Region, RegionManager,<br/>Delegate, Member, Payment]
+    Tables[User, Region, RegionManager, Delegate, Member, Payment]
   end
 
   C --> A
@@ -71,9 +72,10 @@ flowchart LR
   A --> REP
   A --> Prisma
   Prisma --> DB
-
+```
 
 🗂️ Modèle de données (Prisma)
+
 ```mermaid
 erDiagram
   USER {
@@ -131,10 +133,11 @@ erDiagram
   DELEGATE ||--o{ MEMBER : manages
   MEMBER ||--o{ PAYMENT : pays
   DELEGATE ||--o{ PAYMENT : collects
-
+```
 
 🔐 Authentification – flux JWT
 Login (POST /auth/login)
+
 ```mermaid
 sequenceDiagram
   participant C as Client
@@ -148,15 +151,17 @@ sequenceDiagram
   DB-->>AS: user + password hash
   AS->>AS: compare password (bcrypt)
   AS-->>C: return { access_token }
+```
 
 Contenu du JWT :
+```json
 {
   "sub": "user.id",
   "email": "user.email",
   "role": "GM | REGION_MANAGER | DELEGATE",
   "delegateId": "id du délégué si applicable"
 }
-
+```
 
 📡 Routes principales
 Auth
@@ -251,3 +256,4 @@ Si tu veux, je peux maintenant t'ajouter :
 ✅ Un schéma **CI/CD GitHub Actions**  
 ✅ Un script de **seed initial** (GM + Manager + Delegate + Member)  
 ✅ Ou commencer les **tests unitaires**
+```
