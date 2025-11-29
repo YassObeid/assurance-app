@@ -74,6 +74,7 @@ flowchart LR
 
 
 🗂️ Modèle de données (Prisma)
+```mermaid
 erDiagram
   USER {
     string id PK
@@ -134,6 +135,7 @@ erDiagram
 
 🔐 Authentification – flux JWT
 Login (POST /auth/login)
+```mermaid
 sequenceDiagram
   participant C as Client
   participant AC as AuthController
