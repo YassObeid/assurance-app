@@ -237,23 +237,6 @@ Le contrôle d’accès est déjà implémenté (JWT + Roles).
 Le délégué ne peut JAMAIS choisir son delegateId : il vient uniquement du JWT.
 L’architecture est déjà de niveau production-ready (structure senior + séparation des responsabilités).
 
----
 
-## 🎉 Tout est réuni dans un seul bloc lisible  
-Tu as maintenant **un README professionnel**, complet, prêt pour GitHub, avec :
 
-- architecture
-- diagrammes
-- explication JWT
-- routes
-- installation
-- base de données
-- flux complets
-
-Si tu veux, je peux maintenant t'ajouter :
-
-✅ Un diagramme **UML complet**  
-✅ Un schéma **CI/CD GitHub Actions**  
-✅ Un script de **seed initial** (GM + Manager + Delegate + Member)  
-✅ Ou commencer les **tests unitaires**
 ```
