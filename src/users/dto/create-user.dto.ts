@@ -1,6 +1,6 @@
 // src/users/dto/create-user.dto.ts
 import { IsEmail, IsIn, IsString, MinLength } from 'class-validator';
-
+import { Role } from '@prisma/client'; // enum Role { GM, REGION_MANAGER, DELEGATE }
 export class CreateUserDto {
   @IsString()
   name!: string;
@@ -12,6 +12,6 @@ export class CreateUserDto {
   @MinLength(6)
   password!: string;
 
-  @IsIn(['GM', 'REGION_MANAGER', 'DELEGATE'])
+  @IsIn(Object.values(Role))
   role!: 'GM' | 'REGION_MANAGER' | 'DELEGATE';
 }
