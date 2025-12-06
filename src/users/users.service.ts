@@ -17,6 +17,7 @@ export class UsersService {
     const existing = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
+
     if (existing) {
       throw new BadRequestException('Email déjà utilisé');
     }
@@ -30,7 +31,7 @@ export class UsersService {
         password: passwordHash,
         role: dto.role,
       },
-      select: SAFE_USER_SELECT,
+      select: SAFE_USER_SELECT, // ⚠ on ne renvoie jamais le password ici
     });
   }
 
@@ -57,6 +58,7 @@ export class UsersService {
 
   async update(id: string, dto: UpdateUserDto) {
     const existing = await this.prisma.user.findUnique({ where: { id } });
+
     if (!existing || existing.deletedAt) {
       throw new NotFoundException('User introuvable');
     }
@@ -111,9 +113,21 @@ export class UsersService {
     return deleted;
   }
 
-  // Utilisée par AuthService pour le login
+  // 🔐 Utilisée par AuthService pour le login
+  // Ici on DOIT récupérer le password + role + deletedAt
   async findByEmail(email: string) {
-    return this.prisma.user.findUnique({ where: { email } });
+    return this.prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        password: true,   // nécessaire pour comparePassword
+        role: true,       // nécessaire pour @Roles / RolesGuard
+        deletedAt: true,  // pour bloquer les comptes désactivés
+      },
+    });
   }
 }
+
 

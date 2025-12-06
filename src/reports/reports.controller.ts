@@ -1,34 +1,60 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+// src/reports/reports.controller.ts
+import {
+  Controller,
+  Get,
+  Param,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { ReportsService } from './reports.service';
-import { CreateReportDto } from './dto/create-report.dto';
-import { UpdateReportDto } from './dto/update-report.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
+import { Role } from '@prisma/client';
 
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('reports')
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}
 
-  @Post()
-  create(@Body() createReportDto: CreateReportDto) {
-    return this.reportsService.create(createReportDto);
+  /**
+   * Résumé global : GM uniquement
+   */
+  @Roles(Role.GM)
+  @Get('summary')
+  async getSummary() {
+    return this.reportsService.getGlobalSummary();
   }
 
-  @Get()
-  findAll() {
-    return this.reportsService.findAll();
+  /**
+   * Rapport par région :
+   * - GM : toutes les régions
+   * - REGION_MANAGER : seulement ses régions
+   */
+  @Roles(Role.GM, Role.REGION_MANAGER)
+  @Get('regions')
+  async getRegionsReport(@Req() req: any) {
+    const user = req.user as {
+      id: string;
+      role: Role;
+      delegateId?: string | null;
+    };
+
+    return this.reportsService.getRegionsReportForUser(user);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.reportsService.findOne(+id);
-  }
+  /**
+   * Rapport détaillé pour un délégué
+   */
+  @Roles(Role.GM, Role.REGION_MANAGER, Role.DELEGATE)
+  @Get('delegates/:id')
+  async getDelegateReport(@Param('id') id: string, @Req() req: any) {
+    const user = req.user as {
+      id: string;
+      role: Role;
+      delegateId?: string | null;
+    };
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateReportDto: UpdateReportDto) {
-    return this.reportsService.update(+id, updateReportDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.reportsService.remove(+id);
+    return this.reportsService.getDelegateReport(id, user);
   }
 }

@@ -23,7 +23,7 @@ export class DelegatesController {
   constructor(private readonly delegatesService: DelegatesService) {}
 
   // GM + REGION_MANAGER + DELEGATE peuvent voir les délégués accessibles
-  @Roles(Role.GM, Role.REGION_MANAGER, Role.DELEGATE)
+  @Roles(Role.GM,Role.REGION_MANAGER,Role.DELEGATE)
   @Get()
   findAll(@Req() req: any) {
     return this.delegatesService.findAllForUser(req.user);
@@ -36,7 +36,7 @@ export class DelegatesController {
     return this.delegatesService.create(dto);
   }
 
-  @Roles(Role.GM, Role.REGION_MANAGER, Role.DELEGATE)
+  @Roles(Role.GM, Role.REGION_MANAGER,Role.DELEGATE)
   @Get(':id')
   findOne(@Param('id') id: string, @Req() req: any) {
     return this.delegatesService.findOneForUser(id, req.user);
