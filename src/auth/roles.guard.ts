@@ -7,6 +7,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from './roles.decorator';
 import { Role } from '@prisma/client';
+import { RequestUser } from '../common/types/request-user.type';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -27,7 +28,7 @@ export class RolesGuard implements CanActivate {
 
     // Récupération de l'utilisateur injecté par JwtStrategy
     const request = ctx.switchToHttp().getRequest();
-    const user = request.user as { role?: Role };
+    const user = request.user as RequestUser;
 
     if (!user || !user.role) {
       throw new ForbiddenException('Utilisateur non authentifié ou sans rôle');

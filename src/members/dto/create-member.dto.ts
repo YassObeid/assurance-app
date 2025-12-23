@@ -10,4 +10,9 @@ export class CreateMemberDto {
   @IsOptional()
   @IsIn(['ACTIVE', 'SUSPENDED', 'CANCELLED'])
   status?: 'ACTIVE' | 'SUSPENDED' | 'CANCELLED';
+
+  @IsOptional()
+  @IsString()
+  delegateId?: string; // Only for GM role
 }
+
