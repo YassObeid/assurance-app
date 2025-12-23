@@ -27,7 +27,7 @@ export class DelegatesController {
 
   @ApiOperation({ summary: 'Get all delegates' }) // ✅ AJOUTE
   @ApiResponse({ status: 200, description: 'List of delegates' }) // ✅ AJOUTE
-  @Roles(Role.GM, Role.REGION_MANAGER, Role.DELEGATE)
+  @Roles(Role.GM, Role.REGION_MANAGER)
   @Get()
   findAll(@Req() req: any) {
     return this.delegatesService.findAllForUser(req.user);
@@ -42,7 +42,7 @@ export class DelegatesController {
   }
 
   @ApiOperation({ summary:  'Get a delegate by ID' }) // ✅ AJOUTE
-  @Roles(Role.GM, Role.REGION_MANAGER, Role.DELEGATE)
+  @Roles(Role.GM, Role.REGION_MANAGER)
   @Get(':id')
   findOne(@Param('id') id: string, @Req() req: any) {
     return this.delegatesService.findOneForUser(id, req.user);

@@ -103,18 +103,6 @@ export class DelegatesService {
       });
     }
 
-    if (user.role === 'DELEGATE') {
-      const delegate = await this.prisma.delegate.findFirst({
-        where: { userId: user.userId, deletedAt: null },
-        include: {
-          region: true,
-          manager: { include: { user: true, region: true } },
-          user: true,
-        },
-      });
-      return delegate ? [delegate] : [];
-    }
-
     throw new ForbiddenException('Rôle non autorisé à voir les délégués');
   }
 
@@ -127,8 +115,8 @@ export class DelegatesService {
         user.userId,
       );
       where.managerId = { in: activeManagerIds };
-    } else if (user.role === 'DELEGATE') {
-      where.userId = user.userId;
+    } else if (user.role !== 'GM') {
+      throw new ForbiddenException('Rôle non autorisé à voir ce délégué');
     }
     // GM can see all
 
