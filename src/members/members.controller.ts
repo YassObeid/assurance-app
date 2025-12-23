@@ -10,6 +10,7 @@ import {
   UseGuards,
   Req,
 } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger'; // ✅ AJOUTE
 import { MembersService } from './members.service';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { QueryMemberDto } from './dto/query-member.dto';
@@ -18,30 +19,37 @@ import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { Role } from '@prisma/client';
 
+@ApiTags('Members') // ✅ AJOUTE
+@ApiBearerAuth() // ✅ AJOUTE
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('members')
 export class MembersController {
   constructor(private readonly membersService: MembersService) {}
 
-  // Un délégué voit seulement SES membres, un region manager ceux de ses régions, le GM voit tout
-  @Roles(Role.DELEGATE, Role.REGION_MANAGER, Role.GM)
+  @ApiOperation({ summary: 'Get all members' }) // ✅ AJOUTE
+  @ApiResponse({ status: 200, description: 'List of members' }) // ✅ AJOUTE
+  @Roles(Role. DELEGATE, Role.REGION_MANAGER, Role.GM)
   @Get()
   findAll(@Query() q: QueryMemberDto, @Req() req: any) {
-    return this.membersService.findAll(q, req.user);
+    return this.membersService. findAll(q, req.user);
   }
 
-  @Roles(Role.DELEGATE)
+  @ApiOperation({ summary: 'Create a member' }) // ✅ AJOUTE
+  @ApiResponse({ status: 201, description:  'Member created' }) // ✅ AJOUTE
+  @Roles(Role. DELEGATE)
   @Post()
   create(@Body() dto: CreateMemberDto, @Req() req: any) {
-    return this.membersService.create(dto, req.user);
+    return this.membersService.create(dto, req. user);
   }
 
-  @Roles(Role.DELEGATE, Role.REGION_MANAGER, Role.GM)
+  @ApiOperation({ summary: 'Get a member by ID' }) // ✅ AJOUTE
+  @Roles(Role. DELEGATE, Role.REGION_MANAGER, Role.GM)
   @Get(':id')
   findOne(@Param('id') id: string, @Req() req: any) {
     return this.membersService.findOne(id, req.user);
   }
 
+  @ApiOperation({ summary: 'Update a member' }) // ✅ AJOUTE
   @Roles(Role.DELEGATE, Role.GM)
   @Patch(':id')
   update(
@@ -52,6 +60,7 @@ export class MembersController {
     return this.membersService.update(id, dto, req.user);
   }
 
+  @ApiOperation({ summary: 'Delete a member' }) // ✅ AJOUTE
   @Roles(Role.DELEGATE, Role.GM)
   @Delete(':id')
   remove(@Param('id') id: string, @Req() req: any) {

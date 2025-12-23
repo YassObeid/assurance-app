@@ -21,7 +21,6 @@ export class MembersService {
     }
 
     if (user.role === 'GM') {
-      // Pour simplifier : on impose que le GM passe par un compte délégué
       throw new ForbiddenException(
         'Le GM ne crée pas directement des membres (utiliser le compte délégué)',
       );
@@ -39,25 +38,25 @@ export class MembersService {
       data: {
         cin: dto.cin,
         fullName: dto.fullName,
-        status: dto.status ?? 'ACTIVE',
+        status: dto.status ??  'ACTIVE',
         delegateId: delegate.id,
       },
     });
   }
 
-  async findAll(q: QueryMemberDto, user: any) {
+  async findAll(q: QueryMemberDto, user:  any) {
     const where: any = {};
 
     if (q.status) {
-      where.status = q.status;
+      where.status = q. status;
     }
     if (q.q) {
       where.fullName = { contains: q.q, mode: 'insensitive' };
     }
 
     if (user.role === 'DELEGATE') {
-      const delegate = await this.prisma.delegate.findFirst({
-        where: { userId: user.userId },
+      const delegate = await this.prisma. delegate.findFirst({
+        where:  { userId: user.userId },
       });
       if (!delegate) return [];
       where.delegateId = delegate.id;
@@ -68,16 +67,16 @@ export class MembersService {
       throw new ForbiddenException('Rôle non autorisé à voir les membres');
     }
 
-    const members = await this.prisma.member.findMany({
+    const members = await this.prisma. member.findMany({
       where,
       skip: q.skip,
       take: q.take,
       orderBy: { createdAt: 'desc' },
-      include: {
+      include:  {
         delegate: {
           include: {
             region: true,
-            manager: { include: { user: true, region: true } },
+            manager: { include:  { user: true, region: true } },
             user: true,
           },
         },
@@ -92,8 +91,8 @@ export class MembersService {
     const where: any = { id };
 
     if (user.role === 'DELEGATE') {
-      const delegate = await this.prisma.delegate.findFirst({
-        where: { userId: user.userId },
+      const delegate = await this.prisma. delegate.findFirst({
+        where:  { userId: user.userId },
       });
       if (!delegate) {
         throw new ForbiddenException('Accès refusé');
@@ -106,13 +105,13 @@ export class MembersService {
       throw new ForbiddenException('Accès refusé');
     }
 
-    const member = await this.prisma.member.findFirst({
+    const member = await this. prisma.member.findFirst({
       where,
-      include: {
+      include:  {
         delegate: {
           include: {
             region: true,
-            manager: { include: { user: true, region: true } },
+            manager: { include:  { user: true, region: true } },
             user: true,
           },
         },
@@ -127,8 +126,7 @@ export class MembersService {
     return member;
   }
 
-  async update(id: string, dto: CreateMemberDto, user: any) {
-    // Vérifie les droits et existence via findOne
+  async update(id:  string, dto: CreateMemberDto, user: any) {
     await this.findOne(id, user);
 
     const data: any = {};
@@ -143,8 +141,7 @@ export class MembersService {
   }
 
   async remove(id: string, user: any) {
-    // Vérifie les droits et existence
     await this.findOne(id, user);
-    return this.prisma.member.delete({ where: { id } });
+    return this.prisma.member. delete({ where: { id } });
   }
 }
