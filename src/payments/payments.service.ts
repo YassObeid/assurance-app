@@ -208,16 +208,7 @@ export class PaymentsService {
     });
   }
 
-  async remove(id: string, user: RequestUser) {
-    const payment = await this.findOne(id, user);
-
-    // Only GM can delete (for audit reasons)
-    if (user.role !== 'GM') {
-      throw new ForbiddenException('Seul le GM peut supprimer un paiement');
-    }
-
-    return this.prisma.payment.delete({
-      where: { id },
-    });
-  }
+  // ❌ DELETE method removed for audit trail protection
+  // Payments must never be deleted to maintain complete financial audit history
+  // If a payment needs to be reversed, create a new compensating payment instead
 }
