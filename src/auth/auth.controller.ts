@@ -3,6 +3,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagg
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto'; // ✅ AJOUTE
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { Throttle } from '@nestjs/throttler';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -11,9 +12,12 @@ export class AuthController {
 
   @ApiOperation({ summary: 'Login with email and password' })
   @ApiResponse({ status: 200, description: 'Login successful, returns JWT token' })
+  @ApiResponse({ status: 429, description: 'Too many requests - rate limit exceeded' })
+  // ✅ Strict rate limiting for login: 5 attempts per 15 minutes
+  @Throttle({ default: { limit: 5, ttl: 900000 } }) // 15 minutes = 900000ms
   @Post('login')
   async login(@Body() dto: LoginDto) { // ✅ CHANGE :  body -> dto:  LoginDto
-    const user = await this.authService.validateUser(dto.email, dto. password);
+    const user = await this.authService.validateUser(dto.email, dto.password);
     return this.authService.login(user);
   }
 

@@ -12,10 +12,37 @@ import { PaymentsModule } from './payments/payments.module';
 import { ReportsModule } from './reports/reports.module';
 import { ConfigModule } from '@nestjs/config';
 import { SystemController } from './system/system.controller';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true}),PrismaModule, DelegatesModule, MembersModule, RegionsModule, ManagersModule, UsersModule, AuthModule, PaymentsModule, ReportsModule],
-  controllers: [AppController,SystemController, ],
-  providers: [AppService],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    // ✅ Rate limiting global: 10 requests per 60 seconds
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000, // 60 seconds
+        limit: 10, // 10 requests per TTL
+      },
+    ]),
+    PrismaModule,
+    DelegatesModule,
+    MembersModule,
+    RegionsModule,
+    ManagersModule,
+    UsersModule,
+    AuthModule,
+    PaymentsModule,
+    ReportsModule,
+  ],
+  controllers: [AppController, SystemController],
+  providers: [
+    AppService,
+    // ✅ Apply throttler globally
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}
