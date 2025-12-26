@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { CreateMemberDto } from './dto/create-member.dto';
+import { UpdateMemberDto } from './dto/update-member.dto';
 import { QueryMemberDto } from './dto/query-member.dto';
 import { getActiveManagerIdsForUser } from '../common/auth.helpers';
 import { RequestUser } from '../common/types/request-user.type';
@@ -161,7 +162,7 @@ export class MembersService {
     return member;
   }
 
-  async update(id: string, dto: CreateMemberDto, user: RequestUser) {
+  async update(id: string, dto: UpdateMemberDto, user: RequestUser) {
     // Verify ownership before update
     await this.findOne(id, user);
 
