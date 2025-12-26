@@ -13,6 +13,7 @@ import {
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger'; // ✅ AJOUTE
 import { MembersService } from './members.service';
 import { CreateMemberDto } from './dto/create-member.dto';
+import { UpdateMemberDto } from './dto/update-member.dto';
 import { QueryMemberDto } from './dto/query-member.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -50,11 +51,12 @@ export class MembersController {
   }
 
   @ApiOperation({ summary: 'Update a member' }) // ✅ AJOUTE
+  @ApiResponse({ status: 200, description: 'Member updated' })
   @Roles(Role.DELEGATE, Role.REGION_MANAGER, Role.GM)
   @Patch(':id')
   update(
     @Param('id') id: string,
-    @Body() dto: CreateMemberDto,
+    @Body() dto: UpdateMemberDto,
     @Req() req: any,
   ) {
     return this.membersService.update(id, dto, req.user);
