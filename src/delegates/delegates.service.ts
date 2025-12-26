@@ -92,7 +92,7 @@ export class DelegatesService {
         user.userId,
       );
       if (activeManagerIds.length === 0) {
-        return createPaginatedResponse([], 0, query.page, query.limit);
+        return createPaginatedResponse([], 0, query.page || 1, query.limit || 10);
       }
       where.managerId = { in: activeManagerIds };
     } else if (user.role !== 'GM') {
@@ -100,7 +100,9 @@ export class DelegatesService {
     }
 
     // Calculate pagination
-    const skip = (query.page - 1) * query.limit;
+    const page = query.page || 1;
+    const limit = query.limit || 10;
+    const skip = (page - 1) * limit;
 
     // Get total count
     const total = await this.prisma.delegate.count({ where });
@@ -109,7 +111,7 @@ export class DelegatesService {
     const delegates = await this.prisma.delegate.findMany({
       where,
       skip,
-      take: query.limit,
+      take: limit,
       include: {
         region: true,
         manager: { include: { user: true, region: true } },
@@ -118,7 +120,7 @@ export class DelegatesService {
       orderBy: { createdAt: 'desc' },
     });
 
-    return createPaginatedResponse(delegates, total, query.page, query.limit);
+    return createPaginatedResponse(delegates, total, page, limit);
   }
 
   async findOneForUser(id: string, user: RequestUser) {
@@ -160,9 +162,6 @@ export class DelegatesService {
     const data: any = {};
     if (dto.name !== undefined) data.name = dto.name;
     if (dto.phone !== undefined) data.phone = dto.phone;
-    if (dto.regionId !== undefined) data.regionId = dto.regionId;
-    if (dto.managerId !== undefined) data.managerId = dto.managerId;
-    if (dto.userId !== undefined) data.userId = dto.userId;
 
     return this.prisma.delegate.update({
       where: { id },
