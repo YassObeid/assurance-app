@@ -9,6 +9,7 @@ import { CreateMemberDto } from './dto/create-member.dto';
 import { QueryMemberDto } from './dto/query-member.dto';
 import { getActiveManagerIdsForUser } from '../common/auth.helpers';
 import { RequestUser } from '../common/types/request-user.type';
+import { createPaginatedResponse, PaginatedResponse } from '../common/dto/pagination.dto';
 
 @Injectable()
 export class MembersService {
@@ -56,19 +57,22 @@ export class MembersService {
     });
   }
 
-  async findAll(q: QueryMemberDto, user: RequestUser) {
+  async findAll(q: QueryMemberDto, user: RequestUser): Promise<PaginatedResponse<any>> {
     const where: any = {};
 
     if (q.status) {
       where.status = q.status;
     }
     if (q.q) {
-      where.fullName = { contains: q.q, mode: 'insensitive' };
+      where.OR = [
+        { fullName: { contains: q.q, mode: 'insensitive' } },
+        { cin: { contains: q.q, mode: 'insensitive' } },
+      ];
     }
 
     if (user.role === 'DELEGATE') {
       if (!user.delegateId) {
-        return [];
+        return createPaginatedResponse([], 0, q.page, q.limit);
       }
       where.delegateId = user.delegateId;
     } else if (user.role === 'REGION_MANAGER') {
@@ -78,7 +82,7 @@ export class MembersService {
         user.userId,
       );
       if (activeManagerIds.length === 0) {
-        return [];
+        return createPaginatedResponse([], 0, q.page, q.limit);
       }
       where.delegate = {
         deletedAt: null,
@@ -88,10 +92,17 @@ export class MembersService {
       throw new ForbiddenException('Rôle non autorisé à voir les membres');
     }
 
+    // Calculate pagination
+    const skip = (q.page - 1) * q.limit;
+
+    // Get total count
+    const total = await this.prisma.member.count({ where });
+
+    // Get paginated data
     const members = await this.prisma.member.findMany({
       where,
-      skip: q.skip,
-      take: q.take,
+      skip,
+      take: q.limit,
       orderBy: { createdAt: 'desc' },
       include: {
         delegate: {
@@ -105,7 +116,7 @@ export class MembersService {
       },
     });
 
-    return members;
+    return createPaginatedResponse(members, total, q.page, q.limit);
   }
 
   async findOne(id: string, user: RequestUser) {
