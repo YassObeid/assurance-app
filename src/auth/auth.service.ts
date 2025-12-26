@@ -66,6 +66,10 @@ export class AuthService {
 
     return {
       access_token: await this.jwt.signAsync(payload),
+      refresh_token: await this.jwt.signAsync(
+        { sub: user.id, type: 'refresh' },
+        { expiresIn: '7d' } // Refresh token valid for 7 days
+      ),
       user: {
         id: user.id,
         name: user.name,
@@ -73,5 +77,36 @@ export class AuthService {
         role: user.role,
       },
     };
+  }
+
+  // Refresh the access token using a valid refresh token
+  async refresh(refreshToken: string) {
+    try {
+      // Verify and decode the refresh token
+      const decoded = await this.jwt.verifyAsync(refreshToken);
+      
+      // Ensure it's a refresh token
+      if (decoded.type !== 'refresh') {
+        throw new UnauthorizedException('Invalid token type');
+      }
+
+      // Get the user
+      const user = await this.usersService.findById(decoded.sub);
+      if (!user || user.deletedAt) {
+        throw new UnauthorizedException('User not found or deactivated');
+      }
+
+      // Generate new access token (reuse login logic)
+      const userPayload = {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role as Role,
+      };
+
+      return this.login(userPayload);
+    } catch (error) {
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
   }
 }
