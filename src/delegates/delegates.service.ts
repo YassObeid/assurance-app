@@ -7,7 +7,10 @@ import {
 import { PrismaService } from '../prisma.service';
 import { CreateDelegateDto } from './dto/create-delegate.dto';
 import { UpdateDelegateDto } from './dto/update-delegate.dto';
-import { currentRegionIdsForManager } from '../common/region-access.helper';
+import { QueryDelegateDto } from './dto/query-delegate.dto';
+import { getActiveManagerIdsForUser } from '../common/auth.helpers';
+import { RequestUser } from '../common/types/request-user.type';
+import { createPaginatedResponse, PaginatedResponse } from '../common/dto/pagination.dto';
 
 @Injectable()
 export class DelegatesService {
@@ -26,6 +29,11 @@ export class DelegatesService {
     });
     if (!manager) {
       throw new BadRequestException('Manager introuvable');
+    }
+
+    // Vérifier que le manager est actif (endAt=null)
+    if (manager.endAt !== null) {
+      throw new BadRequestException('Ce manager n\'est plus actif');
     }
 
     if (manager.regionId !== dto.regionId) {
@@ -49,75 +57,91 @@ export class DelegatesService {
     return this.prisma.delegate.create({
       data: {
         name: dto.name,
-        phone: dto.phone ??  null,
+        phone: dto.phone ?? null,
         regionId: dto.regionId,
         managerId: dto.managerId,
-        userId: dto.userId ??  null,
+        userId: dto.userId ?? null,
       },
       include: {
         region: true,
         manager: { include: { user: true, region: true } },
-        user:  true,
+        user: true,
       },
     });
   }
 
-  async findAllForUser(user: { userId: string; role: string }) {
-    if (user.role === 'GM') {
-      return this.prisma.delegate.findMany({
-        include: {
-          region: true,
-          manager: { include: { user: true, region: true } },
-          user: true,
-        },
-        orderBy: { createdAt: 'desc' },
-      });
+  async findAllForUser(query: QueryDelegateDto, user: RequestUser): Promise<PaginatedResponse<any>> {
+    const where: any = { deletedAt: null };
+
+    // Apply filters
+    if (query.q) {
+      where.OR = [
+        { name: { contains: query.q, mode: 'insensitive' } },
+        { phone: { contains: query.q, mode: 'insensitive' } },
+      ];
+    }
+
+    if (query.regionId) {
+      where.regionId = query.regionId;
     }
 
     if (user.role === 'REGION_MANAGER') {
-      const regionIds = await currentRegionIdsForManager(this.prisma, user.userId);
-      if (regionIds.length === 0) return [];
-      return this.prisma.delegate.findMany({
-        where: { regionId: { in:  regionIds } },
-        include:  {
-          region: true,
-          manager: { include: { user: true, region: true } },
-          user: true,
-        },
-        orderBy: { createdAt: 'desc' },
-      });
+      // Find delegates whose manager is one of this user's active assignments
+      const activeManagerIds = await getActiveManagerIdsForUser(
+        this.prisma,
+        user.userId,
+      );
+      if (activeManagerIds.length === 0) {
+        return createPaginatedResponse([], 0, query.page || 1, query.limit || 10);
+      }
+      where.managerId = { in: activeManagerIds };
+    } else if (user.role !== 'GM') {
+      throw new ForbiddenException('Rôle non autorisé à voir les délégués');
     }
 
-    if (user.role === 'DELEGATE') {
-      const delegate = await this.prisma.delegate.findFirst({
-        where: { userId: user.userId },
-        include: {
-          region:  true,
-          manager: { include: { user: true, region:  true } },
-          user: true,
-        },
-      });
-      return delegate ? [delegate] : [];
-    }
+    // Calculate pagination
+    const page = query.page || 1;
+    const limit = query.limit || 10;
+    const skip = (page - 1) * limit;
 
-    throw new ForbiddenException('Rôle non autorisé à voir les délégués');
+    // Get total count
+    const total = await this.prisma.delegate.count({ where });
+
+    // Get paginated data
+    const delegates = await this.prisma.delegate.findMany({
+      where,
+      skip,
+      take: limit,
+      include: {
+        region: true,
+        manager: { include: { user: true, region: true } },
+        user: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return createPaginatedResponse(delegates, total, page, limit);
   }
 
-  async findOneForUser(id: string, user: { userId:  string; role: string }) {
-    const where:  any = { id };
+  async findOneForUser(id: string, user: RequestUser) {
+    const where: any = { id, deletedAt: null };
 
     if (user.role === 'REGION_MANAGER') {
-      const regionIds = await currentRegionIdsForManager(this.prisma, user.userId);
-      where.regionId = { in: regionIds };
-    } else if (user. role === 'DELEGATE') {
-      where.userId = user. userId;
+      const activeManagerIds = await getActiveManagerIdsForUser(
+        this.prisma,
+        user.userId,
+      );
+      where.managerId = { in: activeManagerIds };
+    } else if (user.role !== 'GM') {
+      throw new ForbiddenException('Rôle non autorisé à voir ce délégué');
     }
+    // GM can see all
 
-    const delegate = await this.prisma. delegate.findFirst({
+    const delegate = await this.prisma.delegate.findFirst({
       where,
       include: {
         region: true,
-        manager:  { include: { user: true, region: true } },
+        manager: { include: { user: true, region: true } },
         user: true,
       },
     });
@@ -137,25 +161,22 @@ export class DelegatesService {
 
     const data: any = {};
     if (dto.name !== undefined) data.name = dto.name;
-    if (dto. phone !== undefined) data.phone = dto.phone;
-    if (dto.regionId !== undefined) data.regionId = dto.regionId;
-    if (dto.managerId !== undefined) data.managerId = dto.managerId;
-    if (dto.userId !== undefined) data.userId = dto.userId;
+    if (dto.phone !== undefined) data.phone = dto.phone;
 
-    return this. prisma.delegate.update({
+    return this.prisma.delegate.update({
       where: { id },
       data,
       include: {
         region: true,
-        manager: { include:  { user: true, region: true } },
+        manager: { include: { user: true, region: true } },
         user: true,
       },
     });
   }
 
-  async remove(id:  string) {
+  async remove(id: string) {
     try {
-      return await this.prisma.delegate. delete({
+      return await this.prisma.delegate.delete({
         where: { id },
       });
     } catch {

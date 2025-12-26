@@ -128,6 +128,20 @@ export class UsersService {
       },
     });
   }
+
+  // Used by AuthService for refresh token validation
+  async findById(id: string) {
+    return this.prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        deletedAt: true,
+      },
+    });
+  }
 }
 
 
