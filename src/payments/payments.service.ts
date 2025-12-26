@@ -11,6 +11,7 @@ import { QueryPaymentDto } from './dto/query-payment.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
 import { getActiveManagerIdsForUser, ensureDelegateOwnsMember } from '../common/auth.helpers';
 import { RequestUser } from '../common/types/request-user.type';
+import { createPaginatedResponse, PaginatedResponse } from '../common/dto/pagination.dto';
 
 @Injectable()
 export class PaymentsService {
@@ -72,7 +73,7 @@ export class PaymentsService {
     });
   }
 
-  async findAll(q: QueryPaymentDto, user: RequestUser) {
+  async findAll(q: QueryPaymentDto, user: RequestUser): Promise<PaginatedResponse<any>> {
     const where: any = {};
 
     if (q.memberId) where.memberId = q.memberId;
@@ -86,7 +87,7 @@ export class PaymentsService {
 
     if (user.role === 'DELEGATE') {
       if (!user.delegateId) {
-        return [];
+        return createPaginatedResponse([], 0, q.page, q.limit);
       }
       where.delegateId = user.delegateId;
     } else if (user.role === 'REGION_MANAGER') {
@@ -94,7 +95,9 @@ export class PaymentsService {
         this.prisma,
         user.userId,
       );
-      if (!activeManagerIds.length) return [];
+      if (!activeManagerIds.length) {
+        return createPaginatedResponse([], 0, q.page, q.limit);
+      }
       where.member = {
         delegate: {
           deletedAt: null,
@@ -105,10 +108,17 @@ export class PaymentsService {
       throw new ForbiddenException('Rôle non autorisé à voir les paiements');
     }
 
+    // Calculate pagination
+    const skip = (q.page - 1) * q.limit;
+
+    // Get total count
+    const total = await this.prisma.payment.count({ where });
+
+    // Get paginated data
     const payments = await this.prisma.payment.findMany({
       where,
-      skip: q.skip || 0,
-      take: q.take || 10,
+      skip,
+      take: q.limit,
       orderBy: { paidAt: 'desc' },
       include: {
         member: {
@@ -124,7 +134,7 @@ export class PaymentsService {
       },
     });
 
-    return payments;
+    return createPaginatedResponse(payments, total, q.page, q.limit);
   }
 
   async findOne(id: string, user: RequestUser) {

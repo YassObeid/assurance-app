@@ -7,8 +7,10 @@ import {
 import { PrismaService } from '../prisma.service';
 import { CreateDelegateDto } from './dto/create-delegate.dto';
 import { UpdateDelegateDto } from './dto/update-delegate.dto';
+import { QueryDelegateDto } from './dto/query-delegate.dto';
 import { getActiveManagerIdsForUser } from '../common/auth.helpers';
 import { RequestUser } from '../common/types/request-user.type';
+import { createPaginatedResponse, PaginatedResponse } from '../common/dto/pagination.dto';
 
 @Injectable()
 export class DelegatesService {
@@ -68,17 +70,19 @@ export class DelegatesService {
     });
   }
 
-  async findAllForUser(user: RequestUser) {
-    if (user.role === 'GM') {
-      return this.prisma.delegate.findMany({
-        where: { deletedAt: null },
-        include: {
-          region: true,
-          manager: { include: { user: true, region: true } },
-          user: true,
-        },
-        orderBy: { createdAt: 'desc' },
-      });
+  async findAllForUser(query: QueryDelegateDto, user: RequestUser): Promise<PaginatedResponse<any>> {
+    const where: any = { deletedAt: null };
+
+    // Apply filters
+    if (query.q) {
+      where.OR = [
+        { name: { contains: query.q, mode: 'insensitive' } },
+        { phone: { contains: query.q, mode: 'insensitive' } },
+      ];
+    }
+
+    if (query.regionId) {
+      where.regionId = query.regionId;
     }
 
     if (user.role === 'REGION_MANAGER') {
@@ -87,23 +91,34 @@ export class DelegatesService {
         this.prisma,
         user.userId,
       );
-      if (activeManagerIds.length === 0) return [];
-
-      return this.prisma.delegate.findMany({
-        where: {
-          deletedAt: null,
-          managerId: { in: activeManagerIds },
-        },
-        include: {
-          region: true,
-          manager: { include: { user: true, region: true } },
-          user: true,
-        },
-        orderBy: { createdAt: 'desc' },
-      });
+      if (activeManagerIds.length === 0) {
+        return createPaginatedResponse([], 0, query.page, query.limit);
+      }
+      where.managerId = { in: activeManagerIds };
+    } else if (user.role !== 'GM') {
+      throw new ForbiddenException('Rôle non autorisé à voir les délégués');
     }
 
-    throw new ForbiddenException('Rôle non autorisé à voir les délégués');
+    // Calculate pagination
+    const skip = (query.page - 1) * query.limit;
+
+    // Get total count
+    const total = await this.prisma.delegate.count({ where });
+
+    // Get paginated data
+    const delegates = await this.prisma.delegate.findMany({
+      where,
+      skip,
+      take: query.limit,
+      include: {
+        region: true,
+        manager: { include: { user: true, region: true } },
+        user: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return createPaginatedResponse(delegates, total, query.page, query.limit);
   }
 
   async findOneForUser(id: string, user: RequestUser) {
