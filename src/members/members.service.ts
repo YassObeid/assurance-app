@@ -73,9 +73,9 @@ export class MembersService {
 
     if (user.role === 'DELEGATE') {
       if (!user.delegateId) {
-        return createPaginatedResponse([], 0, q.page, q.limit);
+        return createPaginatedResponse([], 0, q.page || 1, q.limit || 10);
       }
-      where.delegateId = user.delegateId;
+      where.delegateId = user.delegateId as string;
     } else if (user.role === 'REGION_MANAGER') {
       // Get delegates under this manager's active assignments
       const activeManagerIds = await getActiveManagerIdsForUser(
@@ -83,7 +83,7 @@ export class MembersService {
         user.userId,
       );
       if (activeManagerIds.length === 0) {
-        return createPaginatedResponse([], 0, q.page, q.limit);
+        return createPaginatedResponse([], 0, q.page || 1, q.limit || 10);
       }
       where.delegate = {
         deletedAt: null,
@@ -94,7 +94,9 @@ export class MembersService {
     }
 
     // Calculate pagination
-    const skip = (q.page - 1) * q.limit;
+    const page = q.page || 1;
+    const limit = q.limit || 10;
+    const skip = (page - 1) * limit;
 
     // Get total count
     const total = await this.prisma.member.count({ where });
@@ -103,7 +105,7 @@ export class MembersService {
     const members = await this.prisma.member.findMany({
       where,
       skip,
-      take: q.limit,
+      take: limit,
       orderBy: { createdAt: 'desc' },
       include: {
         delegate: {
@@ -117,7 +119,7 @@ export class MembersService {
       },
     });
 
-    return createPaginatedResponse(members, total, q.page, q.limit);
+    return createPaginatedResponse(members, total, page, limit);
   }
 
   async findOne(id: string, user: RequestUser) {
@@ -127,7 +129,7 @@ export class MembersService {
       if (!user.delegateId) {
         throw new ForbiddenException('Accès refusé');
       }
-      where.delegateId = user.delegateId;
+      where.delegateId = user.delegateId as string;
     } else if (user.role === 'REGION_MANAGER') {
       const activeManagerIds = await getActiveManagerIdsForUser(
         this.prisma,

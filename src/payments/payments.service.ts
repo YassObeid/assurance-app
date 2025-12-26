@@ -87,16 +87,16 @@ export class PaymentsService {
 
     if (user.role === 'DELEGATE') {
       if (!user.delegateId) {
-        return createPaginatedResponse([], 0, q.page, q.limit);
+        return createPaginatedResponse([], 0, q.page || 1, q.limit || 10);
       }
-      where.delegateId = user.delegateId;
+      where.delegateId = user.delegateId as string;
     } else if (user.role === 'REGION_MANAGER') {
       const activeManagerIds = await getActiveManagerIdsForUser(
         this.prisma,
         user.userId,
       );
       if (!activeManagerIds.length) {
-        return createPaginatedResponse([], 0, q.page, q.limit);
+        return createPaginatedResponse([], 0, q.page || 1, q.limit || 10);
       }
       where.member = {
         delegate: {
@@ -109,7 +109,9 @@ export class PaymentsService {
     }
 
     // Calculate pagination
-    const skip = (q.page - 1) * q.limit;
+    const page = q.page || 1;
+    const limit = q.limit || 10;
+    const skip = (page - 1) * limit;
 
     // Get total count
     const total = await this.prisma.payment.count({ where });
@@ -118,7 +120,7 @@ export class PaymentsService {
     const payments = await this.prisma.payment.findMany({
       where,
       skip,
-      take: q.limit,
+      take: limit,
       orderBy: { paidAt: 'desc' },
       include: {
         member: {
@@ -134,7 +136,7 @@ export class PaymentsService {
       },
     });
 
-    return createPaginatedResponse(payments, total, q.page, q.limit);
+    return createPaginatedResponse(payments, total, page, limit);
   }
 
   async findOne(id: string, user: RequestUser) {
@@ -144,7 +146,7 @@ export class PaymentsService {
       if (!user.delegateId) {
         throw new ForbiddenException('Accès refusé');
       }
-      where.delegateId = user.delegateId;
+      where.delegateId = user.delegateId as string;
     } else if (user.role === 'REGION_MANAGER') {
       const activeManagerIds = await getActiveManagerIdsForUser(
         this.prisma,
