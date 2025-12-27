@@ -65,7 +65,7 @@ export class AuthService {
     }
 
     return {
-      access_token: await this.jwt.signAsync(payload),
+      access_token: await this.jwt.signAsync(payload, { expiresIn: '1h' }), // Access token valid for 1 hour
       refresh_token: await this.jwt.signAsync(
         { sub: user.id, type: 'refresh' },
         { expiresIn: '7d' } // Refresh token valid for 7 days
