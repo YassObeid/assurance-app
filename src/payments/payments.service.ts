@@ -33,7 +33,10 @@ export class PaymentsService {
       }
 
       // Verify the member belongs to this delegate
-      await ensureDelegateOwnsMember(this.prisma, user.delegateId, dto.memberId);
+      const owns = await ensureDelegateOwnsMember(this.prisma, user.delegateId, dto.memberId);
+      if (!owns) {
+        throw new ForbiddenException('Ce membre ne vous appartient pas');
+      }
       delegateId = user.delegateId;
     } else {
       // GM can create for any member

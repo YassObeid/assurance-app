@@ -34,21 +34,18 @@ export async function currentRegionIdsForManager(
 
 /**
  * Ensure a delegate owns a specific member
- * Throws ForbiddenException if not
+ * Returns true if owns, false otherwise
  */
 export async function ensureDelegateOwnsMember(
   prisma: PrismaClient,
   delegateId: string,
   memberId: string,
-): Promise<void> {
+): Promise<boolean> {
   const member = await prisma.member.findFirst({
     where: { id: memberId, delegateId },
   });
   
-  if (!member) {
-    const { ForbiddenException } = await import('@nestjs/common');
-    throw new ForbiddenException('Ce membre ne vous appartient pas');
-  }
+  return !!member;
 }
 
 /**

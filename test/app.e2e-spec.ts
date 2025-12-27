@@ -100,6 +100,12 @@ describe('Assurance API E2E', () => {
     delegateToken = delegateLogin.body.access_token;
   });
 
+  beforeEach(async () => {
+    // Clean up test data before each test
+    await prisma.payment.deleteMany();
+    await prisma.member.deleteMany();
+  });
+
   afterAll(async () => {
     if (app) await app.close();
     if (prisma) await prisma.$disconnect();
