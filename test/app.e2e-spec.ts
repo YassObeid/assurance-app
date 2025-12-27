@@ -18,7 +18,14 @@ describe('Assurance API E2E', () => {
   let memberId: string;
 
   beforeAll(async () => {
-    prisma = new PrismaClient();
+    prisma = new PrismaClient({
+      datasources: {
+        db: {
+          url: process.env.DATABASE_URL,
+        },
+      },
+    });
+    await prisma.$connect();
 
     await prisma.payment.deleteMany();
     await prisma.member.deleteMany();
