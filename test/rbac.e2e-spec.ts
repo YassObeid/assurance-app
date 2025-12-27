@@ -389,6 +389,9 @@ describe('RBAC Authorization E2E Tests', () => {
       expect(loginRes.body).toHaveProperty('access_token');
       expect(loginRes.body).toHaveProperty('refresh_token');
 
+      // Wait 1 second to ensure tokens have different timestamps
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       const refreshRes = await request(server)
         .post('/auth/refresh')
         .send({ refresh_token: loginRes.body.refresh_token })
