@@ -27,9 +27,17 @@ describe('RBAC Authorization E2E Tests', () => {
   let member2Id: string; // Belongs to delegate2
 
   beforeAll(async () => {
-    prisma = new PrismaClient();
+    prisma = new PrismaClient({
+      datasources: {
+        db: {
+          url: process.env.DATABASE_URL,
+        },
+      },
+    });
 
-    // Clean database
+    await prisma.$connect();
+
+    // Clean database in correct order (respect FK constraints)
     await prisma.payment.deleteMany();
     await prisma.member.deleteMany();
     await prisma.delegate.deleteMany();
