@@ -33,11 +33,7 @@ export class ReportsController {
   @Roles(Role. GM, Role.REGION_MANAGER)
   @Get('regions')
   async getRegionsReport(@Req() req: any) {
-    const user = {
-      userId: req.user. id,  // ✅ CHANGÉ : id → userId
-      role: req. user.role,
-    };
-    return this.reportsService. getRegionsReportForUser(user);
+    return this.reportsService. getRegionsReportForUser(req.user);
   }
 
   /**
@@ -46,11 +42,6 @@ export class ReportsController {
   @Roles(Role.GM, Role.REGION_MANAGER, Role.DELEGATE)
   @Get('delegates/:id')
   async getDelegateReport(@Param('id') id: string, @Req() req: any) {
-    const user = {
-      userId: req. user.id,  // ✅ CHANGÉ : id → userId
-      role: req.user.role,
-      delegateId: req.user.delegateId,
-    };
-    return this.reportsService.getDelegateReport(id, user);
+    return this.reportsService.getDelegateReport(id, req.user);
   }
 }

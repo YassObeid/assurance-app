@@ -1,26 +1,27 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { Role } from '@prisma/client';
-import { currentRegionIdsForManager } from '../common/region-access.helper';
+import { currentRegionIdsForManager } from '../common/auth.helpers';
+import { RequestUser } from '../common/types/request-user.type';
 
 @Injectable()
 export class ReportsService {
   constructor(private prisma: PrismaService) {}
 
   async getGlobalSummary() {
-    const totalMembers = await this.prisma. member.count();
+    const totalMembers = await this.prisma.member.count();
     const totalPayments = await this.prisma.payment.aggregate({
-      _sum: { amount:  true },
+      _sum: { amount: true },
     });
 
     return {
       totalMembers,
-      totalPaymentsAmount: totalPayments._sum. amount || 0,
+      totalPaymentsAmount: totalPayments._sum.amount || 0,
     };
   }
 
-  async getRegionsReportForUser(user: { userId: string; role: Role }) {
-    if (user.role === 'GM') {
+  async getRegionsReportForUser(user: RequestUser) {
+    if (user.role === Role.GM) {
       const regions = await this.prisma.region.findMany({
         include: {
           managers: true,
@@ -30,7 +31,7 @@ export class ReportsService {
       return regions;
     }
 
-    if (user.role === 'REGION_MANAGER') {
+    if (user.role === Role.REGION_MANAGER) {
       const regionIds = await currentRegionIdsForManager(this.prisma, user.userId);
       if (regionIds.length === 0) return [];
 
@@ -47,7 +48,7 @@ export class ReportsService {
     throw new ForbiddenException('Rôle non autorisé');
   }
 
-  async getDelegateReport(delegateId: string, user: { userId: string; role: Role; delegateId?:  string }) {
+  async getDelegateReport(delegateId: string, user: RequestUser) {
     const delegate = await this.prisma.delegate.findUnique({
       where: { id: delegateId },
       include: {
@@ -66,8 +67,8 @@ export class ReportsService {
       throw new NotFoundException('Délégué introuvable');
     }
 
-    if (user. role === Role.DELEGATE) {
-      if (! user.delegateId || user.delegateId !== delegateId) {
+    if (user.role === Role.DELEGATE) {
+      if (!user.delegateId || user.delegateId !== delegateId) {
         throw new ForbiddenException('Accès refusé');
       }
     } else if (user.role === Role.REGION_MANAGER) {

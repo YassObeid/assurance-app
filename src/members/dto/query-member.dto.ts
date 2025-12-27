@@ -1,24 +1,22 @@
-import { IsOptional, IsInt, Min, IsIn, IsString } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsOptional, IsIn, IsString } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { PaginationDto } from '../../common/dto/pagination.dto';
 
-export class QueryMemberDto {
+export class QueryMemberDto extends PaginationDto {
+  @ApiPropertyOptional({
+    description: 'Search by member name or CIN',
+    example: 'John',
+  })
   @IsOptional()
   @IsString()
-  q?: string; // recherche par nom
+  q?: string;
 
+  @ApiPropertyOptional({
+    description: 'Filter by member status',
+    enum: ['ACTIVE', 'SUSPENDED', 'CANCELLED'],
+    example: 'ACTIVE',
+  })
   @IsOptional()
   @IsIn(['ACTIVE', 'SUSPENDED', 'CANCELLED'])
   status?: 'ACTIVE' | 'SUSPENDED' | 'CANCELLED';
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(0)
-  skip: number = 0;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  take: number = 20;
 }
