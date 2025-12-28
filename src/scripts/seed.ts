@@ -13,7 +13,7 @@ async function main() {
     const gmPassword = 'gm123456';
     let gm = await prisma.user.findUnique({ where: { email: gmEmail } });
     if (!gm) {
-      gm = await prisma.user. create({
+      gm = await prisma.user.create({
         data: {
           name: 'Global Manager',
           email: gmEmail,
@@ -27,18 +27,20 @@ async function main() {
     }
 
     // ========== 2) CRÉER 3 RÉGIONS ==========
-    const regions:  any[] = []; // ✅ TYPE DÉFINI
+    const regions: any[] = []; // ✅ TYPE DÉFINI
     const regionNames = ['Beyrouth', 'Nord', 'Sud'];
 
     for (const regionName of regionNames) {
-      let region = await prisma.region. findUnique({ where: { name: regionName } });
+      let region = await prisma.region.findUnique({
+        where: { name: regionName },
+      });
       if (!region) {
         region = await prisma.region.create({
           data: { name: regionName },
         });
         console.log(`✅ Région "${regionName}" créée`);
       } else {
-        console. log(`ℹ️ Région "${regionName}" déjà existante`);
+        console.log(`ℹ️ Région "${regionName}" déjà existante`);
       }
       regions.push(region);
     }
@@ -55,7 +57,9 @@ async function main() {
       const managerEmail = managerEmails[i];
       const managerPassword = `manager123_${i + 1}`;
 
-      let managerUser = await prisma.user.findUnique({ where: { email: managerEmail } });
+      let managerUser = await prisma.user.findUnique({
+        where: { email: managerEmail },
+      });
       if (!managerUser) {
         managerUser = await prisma.user.create({
           data: {
@@ -82,14 +86,14 @@ async function main() {
       if (!existingRM) {
         await prisma.regionManager.create({
           data: {
-            userId: managerUser. id,
+            userId: managerUser.id,
             regionId: regions[i].id,
           },
         });
         console.log(`✅ Manager ${i + 1} affecté à "${regions[i].name}"`);
       }
 
-      managers.push({ user: managerUser, region:  regions[i] });
+      managers.push({ user: managerUser, region: regions[i] });
     }
 
     // ========== 4) CRÉER 6 DELEGATES (2 par région) ==========
@@ -101,7 +105,7 @@ async function main() {
       const manager = managers[regionIdx];
 
       for (let delegateIdx = 0; delegateIdx < 2; delegateIdx++) {
-        const delegateEmail = `delegate.${region.name. toLowerCase()}.${delegateIdx + 1}@example.com`;
+        const delegateEmail = `delegate.${region.name.toLowerCase()}.${delegateIdx + 1}@example.com`;
         const delegatePassword = `delegate123_${delegateCounter}`;
 
         let delegateUser = await prisma.user.findUnique({
@@ -116,13 +120,15 @@ async function main() {
               role: Role.DELEGATE,
             },
           });
-          console.log(`✅ Delegate créé : ${delegateEmail} / ${delegatePassword}`);
+          console.log(
+            `✅ Delegate créé : ${delegateEmail} / ${delegatePassword}`,
+          );
         } else {
-          console. log(`ℹ️ Delegate déjà existant :  ${delegateEmail}`);
+          console.log(`ℹ️ Delegate déjà existant :  ${delegateEmail}`);
         }
 
         // Créer l'entité Delegate
-        let delegate = await prisma.delegate. findFirst({
+        let delegate = await prisma.delegate.findFirst({
           where: {
             name: `Délégué ${delegateCounter}`,
             regionId: region.id,
@@ -141,19 +147,21 @@ async function main() {
           if (rm) {
             delegate = await prisma.delegate.create({
               data: {
-                name:  `Délégué ${delegateCounter}`,
-                phone: `06000000${delegateCounter. toString().padStart(2, '0')}`,
+                name: `Délégué ${delegateCounter}`,
+                phone: `06000000${delegateCounter.toString().padStart(2, '0')}`,
                 regionId: region.id,
                 managerId: rm.id,
                 userId: delegateUser.id,
               },
             });
-            console.log(`✅ Delegate ${delegateCounter} créé dans "${region.name}" avec user associé`);
+            console.log(
+              `✅ Delegate ${delegateCounter} créé dans "${region.name}" avec user associé`,
+            );
           }
         }
 
         if (delegate) {
-          delegates. push(delegate);
+          delegates.push(delegate);
         }
         delegateCounter++;
       }
@@ -161,12 +169,12 @@ async function main() {
 
     // ========== 5) CRÉER DES MEMBERS PAR DELEGATE ==========
     let memberCounter = 1;
-    for (let i = 0; i < delegates. length; i++) {
+    for (let i = 0; i < delegates.length; i++) {
       const delegate = delegates[i];
 
       for (let j = 0; j < 2; j++) {
         const cin = `TEST${(i + 1).toString().padStart(2, '0')}${(j + 1).toString().padStart(2, '0')}`;
-        let member = await prisma.member. findFirst({
+        let member = await prisma.member.findFirst({
           where: { cin },
         });
 
@@ -191,7 +199,7 @@ async function main() {
     let paymentCounter = 0;
 
     for (const member of members) {
-      const existingPayment = await prisma. payment.findFirst({
+      const existingPayment = await prisma.payment.findFirst({
         where: { memberId: member.id },
       });
 
@@ -201,7 +209,7 @@ async function main() {
           data: {
             memberId: member.id,
             delegateId: member.delegateId,
-            amount:  amount,
+            amount: amount,
             paidAt: new Date(),
           },
         });
@@ -239,7 +247,9 @@ async function main() {
       const delegateIdx = i + 1;
       const regionIdx = Math.floor(i / 2);
       const regionName = regions[regionIdx].name;
-      console.log(`  Email : delegate.${regionName. toLowerCase()}.${(i % 2) + 1}@example.com`);
+      console.log(
+        `  Email : delegate.${regionName.toLowerCase()}.${(i % 2) + 1}@example.com`,
+      );
       console.log(`  Password : delegate123_${delegateIdx}`);
       console.log(`  Région : ${regionName}`);
       console.log('  Peut : voir ses membres et paiements\n');
@@ -247,11 +257,21 @@ async function main() {
 
     console.log('\n🎯 Scénarios de test:\n');
     console.log('1️⃣  Login comme GM → Voir toutes les régions et managers');
-    console.log('2️⃣  Login comme Manager Beyrouth → Voir délégués de Beyrouth seulement');
-    console.log('3️⃣  Login comme Manager Nord → Voir délégués du Nord seulement');
-    console.log('4️⃣  Login comme Delegate → Voir ses membres et paiements seulement');
-    console.log('5️⃣  Tester les permissions (manager ne peut pas créer de région)');
-    console.log('6️⃣  Tester les permissions (delegate ne peut pas voir d\'autres délégués)');
+    console.log(
+      '2️⃣  Login comme Manager Beyrouth → Voir délégués de Beyrouth seulement',
+    );
+    console.log(
+      '3️⃣  Login comme Manager Nord → Voir délégués du Nord seulement',
+    );
+    console.log(
+      '4️⃣  Login comme Delegate → Voir ses membres et paiements seulement',
+    );
+    console.log(
+      '5️⃣  Tester les permissions (manager ne peut pas créer de région)',
+    );
+    console.log(
+      "6️⃣  Tester les permissions (delegate ne peut pas voir d'autres délégués)",
+    );
   } catch (error) {
     console.error('❌ Seed error', error);
     process.exit(1);

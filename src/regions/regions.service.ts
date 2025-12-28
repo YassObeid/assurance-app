@@ -74,7 +74,3 @@ export class RegionsService {
     }
   }
 }
-
-
-  
-

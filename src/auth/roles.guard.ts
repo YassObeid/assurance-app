@@ -14,11 +14,10 @@ export class RolesGuard implements CanActivate {
 
   canActivate(ctx: ExecutionContext): boolean {
     // Rôles attendus sur la route (@Roles(...))
-    const requiredRoles =
-      this.reflector.getAllAndOverride<Role[]>(ROLES_KEY, [
-        ctx.getHandler(),
-        ctx.getClass(),
-      ]);
+    const requiredRoles = this.reflector.getAllAndOverride<Role[]>(ROLES_KEY, [
+      ctx.getHandler(),
+      ctx.getClass(),
+    ]);
 
     // Si rien n'est défini → pas de filtre
     if (!requiredRoles || requiredRoles.length === 0) {

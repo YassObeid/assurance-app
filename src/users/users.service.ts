@@ -122,12 +122,10 @@ export class UsersService {
         id: true,
         name: true,
         email: true,
-        password: true,   // nécessaire pour comparePassword
-        role: true,       // nécessaire pour @Roles / RolesGuard
-        deletedAt: true,  // pour bloquer les comptes désactivés
+        password: true, // nécessaire pour comparePassword
+        role: true, // nécessaire pour @Roles / RolesGuard
+        deletedAt: true, // pour bloquer les comptes désactivés
       },
     });
   }
 }
-
-

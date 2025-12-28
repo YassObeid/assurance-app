@@ -41,7 +41,7 @@ describe('MembersService', () => {
     }).compile();
 
     service = module.get(MembersService);
-    prisma = module.get(PrismaService) as jest.Mocked<PrismaService>;
+    prisma = module.get(PrismaService);
     jest.clearAllMocks();
     currentRegionIdsForManagerMock.mockReset();
   });
@@ -72,9 +72,9 @@ describe('MembersService', () => {
 
     it('rejette si le rôle est interdit', async () => {
       const dto = { cin: 'CIN', fullName: 'Ali' } as any;
-      await expect(service.create(dto, { role: 'USER' })).rejects.toBeInstanceOf(
-        ForbiddenException,
-      );
+      await expect(
+        service.create(dto, { role: 'USER' }),
+      ).rejects.toBeInstanceOf(ForbiddenException);
     });
   });
 
@@ -133,9 +133,9 @@ describe('MembersService', () => {
   it('findOne lève NotFound si le membre est absent', async () => {
     prisma.member.findFirst.mockResolvedValue(null as any);
 
-    await expect(service.findOne('missing', { role: 'GM' })).rejects.toBeInstanceOf(
-      NotFoundException,
-    );
+    await expect(
+      service.findOne('missing', { role: 'GM' }),
+    ).rejects.toBeInstanceOf(NotFoundException);
   });
 
   it('remove supprime le membre après vérification des droits', async () => {
@@ -146,5 +146,57 @@ describe('MembersService', () => {
 
     expect(prisma.member.delete).toHaveBeenCalledWith({ where: { id: 'm1' } });
     expect(res).toEqual({ id: 'm1' });
+  });
+
+  describe('REGION_MANAGER access restriction', () => {
+    it('findAll filtre les membres par régions du manager', async () => {
+      currentRegionIdsForManagerMock.mockResolvedValue([
+        'region-1',
+        'region-2',
+      ]);
+      prisma.member.findMany.mockResolvedValue([
+        { id: 'm1', delegate: { regionId: 'region-1' } },
+      ] as any);
+
+      await service.findAll({ skip: 0, take: 10 } as any, {
+        role: 'REGION_MANAGER',
+        userId: 'manager-user-1',
+      });
+
+      expect(currentRegionIdsForManagerMock).toHaveBeenCalledWith(
+        prisma,
+        'manager-user-1',
+      );
+      expect(prisma.member.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            delegate: { regionId: { in: ['region-1', 'region-2'] } },
+          }),
+        }),
+      );
+    });
+
+    it('findOne filtre le membre par régions du manager', async () => {
+      currentRegionIdsForManagerMock.mockResolvedValue(['region-1']);
+      prisma.member.findFirst.mockResolvedValue({ id: 'm1' } as any);
+
+      await service.findOne('m1', {
+        role: 'REGION_MANAGER',
+        userId: 'manager-user-1',
+      });
+
+      expect(currentRegionIdsForManagerMock).toHaveBeenCalledWith(
+        prisma,
+        'manager-user-1',
+      );
+      expect(prisma.member.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            id: 'm1',
+            delegate: { regionId: { in: ['region-1'] } },
+          }),
+        }),
+      );
+    });
   });
 });

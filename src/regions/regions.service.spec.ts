@@ -25,22 +25,28 @@ describe('RegionsService', () => {
     }).compile();
 
     service = module.get<RegionsService>(RegionsService);
-    prisma = module.get(PrismaService) as typeof prismaMock;
+    prisma = module.get(PrismaService);
     jest.clearAllMocks();
   });
 
   it('create doit refuser une région déjà existante', async () => {
-    prisma.region.findUnique.mockResolvedValue({ id: 'r1', name: 'Beyrouth' } as any);
+    prisma.region.findUnique.mockResolvedValue({
+      id: 'r1',
+      name: 'Beyrouth',
+    } as any);
 
     // changed code - toThrow() without arguments, or use specific error message
-    await expect(
-      service.create({ name: 'Beyrouth' }),
-    ).rejects.toThrow(BadRequestException);
+    await expect(service.create({ name: 'Beyrouth' })).rejects.toThrow(
+      BadRequestException,
+    );
   });
 
-  it('create doit créer une nouvelle région si elle n\'existe pas', async () => {
+  it("create doit créer une nouvelle région si elle n'existe pas", async () => {
     prisma.region.findUnique.mockResolvedValue(null);
-    prisma.region.create.mockResolvedValue({ id: 'r2', name: 'Tripoli' } as any);
+    prisma.region.create.mockResolvedValue({
+      id: 'r2',
+      name: 'Tripoli',
+    } as any);
 
     const res = await service.create({ name: 'Tripoli' });
 

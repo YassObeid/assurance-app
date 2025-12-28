@@ -20,12 +20,10 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { Role } from '@prisma/client';
 
-
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('payments')
 export class PaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
-
 
   // Création d'un paiement : seulement DELEGATE
   @Roles(Role.DELEGATE)
@@ -34,7 +32,6 @@ export class PaymentsController {
     return this.paymentsService.create(dto, req.user);
   }
 
-
   // Liste des paiements : DELEGATE (les siens), REGION_MANAGER (ses régions), GM (tout)
   @Roles(Role.DELEGATE, Role.REGION_MANAGER, Role.GM)
   @Get()
@@ -42,14 +39,12 @@ export class PaymentsController {
     return this.paymentsService.findAll(q, req.user);
   }
 
-
   // Détail d'un paiement
   @Roles(Role.DELEGATE, Role.REGION_MANAGER, Role.GM)
   @Get(':id')
   findOne(@Param('id') id: string, @Req() req: any) {
     return this.paymentsService.findOne(id, req.user);
   }
-
 
   // Mise à jour : DELEGATE (ses paiements) + GM
   @Roles(Role.DELEGATE, Role.GM)
@@ -61,7 +56,6 @@ export class PaymentsController {
   ) {
     return this.paymentsService.update(id, dto, req.user);
   }
-
 
   // Suppression : DELEGATE (ses paiements) + GM
   @Roles(Role.DELEGATE, Role.GM)

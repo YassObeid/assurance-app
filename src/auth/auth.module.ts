@@ -10,17 +10,17 @@ import { ConfigModule } from '@nestjs/config';
 @Module({
   imports: [
     UsersModule,
-    ConfigModule.forRoot({ isGlobal: true}),
+    ConfigModule.forRoot({ isGlobal: true }),
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'change-me-in-prod',
       signOptions: {
-        expiresIn: (process.env.JWT_EXPIRES_IN ?? '1h') as unknown as import('jsonwebtoken').SignOptions['expiresIn'],
+        expiresIn: (process.env.JWT_EXPIRES_IN ??
+          '1h') as unknown as import('jsonwebtoken').SignOptions['expiresIn'],
       },
     }),
   ],
-  providers: [AuthService, PrismaService,JwtStrategy],
+  providers: [AuthService, PrismaService, JwtStrategy],
   controllers: [AuthController],
-  exports: [AuthService,PrismaService],
+  exports: [AuthService, PrismaService],
 })
 export class AuthModule {}
-

@@ -9,7 +9,12 @@ import {
   UseGuards,
   Req,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger'; // ✅ AJOUTE
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger'; // ✅ AJOUTE
 import { DelegatesService } from './delegates.service';
 import { CreateDelegateDto } from './dto/create-delegate.dto';
 import { UpdateDelegateDto } from './dto/update-delegate.dto';
@@ -34,22 +39,22 @@ export class DelegatesController {
   }
 
   @ApiOperation({ summary: 'Create a delegate' }) // ✅ AJOUTE
-  @ApiResponse({ status: 201, description:  'Delegate created' }) // ✅ AJOUTE
+  @ApiResponse({ status: 201, description: 'Delegate created' }) // ✅ AJOUTE
   @Roles(Role.GM)
   @Post()
   create(@Body() dto: CreateDelegateDto) {
     return this.delegatesService.create(dto);
   }
 
-  @ApiOperation({ summary:  'Get a delegate by ID' }) // ✅ AJOUTE
+  @ApiOperation({ summary: 'Get a delegate by ID' }) // ✅ AJOUTE
   @Roles(Role.GM, Role.REGION_MANAGER, Role.DELEGATE)
   @Get(':id')
   findOne(@Param('id') id: string, @Req() req: any) {
     return this.delegatesService.findOneForUser(id, req.user);
   }
 
-  @ApiOperation({ summary:  'Update a delegate' }) // ✅ AJOUTE
-  @Roles(Role. GM)
+  @ApiOperation({ summary: 'Update a delegate' }) // ✅ AJOUTE
+  @Roles(Role.GM)
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: UpdateDelegateDto) {
     return this.delegatesService.update(id, dto);

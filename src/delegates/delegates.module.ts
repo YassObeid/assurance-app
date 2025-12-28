@@ -4,9 +4,8 @@ import { DelegatesController } from './delegates.controller';
 import { PrismaModule } from '../prisma.module';
 
 @Module({
-  imports: [PrismaModule],                 // ← on l’importe
+  imports: [PrismaModule], // ← on l’importe
   controllers: [DelegatesController],
-  providers: [DelegatesService],           // plus besoin d’ajouter PrismaService ici
+  providers: [DelegatesService], // plus besoin d’ajouter PrismaService ici
 })
 export class DelegatesModule {}
-
