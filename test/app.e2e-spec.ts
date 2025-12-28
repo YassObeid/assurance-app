@@ -81,7 +81,11 @@ describe('Assurance API E2E', () => {
 
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(
-      new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
     );
     await app.init();
 
@@ -115,7 +119,7 @@ describe('Assurance API E2E', () => {
       .set('Authorization', `Bearer ${gmToken}`)
       .expect(200);
 
-    const list = Array.isArray(res.body) ? res.body : res.body.data ?? [];
+    const list = Array.isArray(res.body) ? res.body : (res.body.data ?? []);
     expect(Array.isArray(list)).toBe(true);
     expect(list.length).toBe(0);
   });
@@ -139,20 +143,20 @@ describe('Assurance API E2E', () => {
       .set('Authorization', `Bearer ${delegateToken}`)
       .expect(200);
 
-    const list = Array.isArray(res.body) ? res.body : res.body.data ?? [];
+    const list = Array.isArray(res.body) ? res.body : (res.body.data ?? []);
     expect(Array.isArray(list)).toBe(true);
     expect(list.length).toBeGreaterThanOrEqual(1);
     const first = list.find((m: any) => m.cin === 'CIN123456');
     expect(first).toBeDefined();
   });
 
-  it("permet au GM de voir tous les members (vue globale)", async () => {
+  it('permet au GM de voir tous les members (vue globale)', async () => {
     const res = await request(server)
       .get('/members')
       .set('Authorization', `Bearer ${gmToken}`)
       .expect(200);
 
-    const list = Array.isArray(res.body) ? res.body : res.body.data ?? [];
+    const list = Array.isArray(res.body) ? res.body : (res.body.data ?? []);
     expect(Array.isArray(list)).toBe(true);
     const found = list.find((m: any) => m.cin === 'CIN123456');
     expect(found).toBeDefined();
@@ -175,7 +179,7 @@ describe('Assurance API E2E', () => {
       .set('Authorization', `Bearer ${gmToken}`)
       .expect(200);
 
-    const list = Array.isArray(res.body) ? res.body : res.body.data ?? [];
+    const list = Array.isArray(res.body) ? res.body : (res.body.data ?? []);
     expect(Array.isArray(list)).toBe(true);
     const found = list.find((p: any) => p.memberId === memberId);
     expect(found).toBeDefined();

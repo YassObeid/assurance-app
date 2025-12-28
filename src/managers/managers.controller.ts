@@ -8,7 +8,12 @@ import {
   Delete,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger'; // ✅ AJOUTE
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger'; // ✅ AJOUTE
 import { ManagersService } from './managers.service';
 import { CreateManagerDto } from './dto/create-manager.dto';
 import { UpdateManagerDto } from './dto/update-manager.dto';
@@ -22,7 +27,7 @@ import { Role } from '@prisma/client';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('managers')
 export class ManagersController {
-  constructor(private readonly service:  ManagersService) {}
+  constructor(private readonly service: ManagersService) {}
 
   @ApiOperation({ summary: 'Create a manager (GM only)' }) // ✅ AJOUTE
   @ApiResponse({ status: 201, description: 'Manager created' }) // ✅ AJOUTE
@@ -32,7 +37,7 @@ export class ManagersController {
     return this.service.create(dto);
   }
 
-  @ApiOperation({ summary:  'Get all managers (GM only)' }) // ✅ AJOUTE
+  @ApiOperation({ summary: 'Get all managers (GM only)' }) // ✅ AJOUTE
   @ApiResponse({ status: 200, description: 'List of managers' }) // ✅ AJOUTE
   @Roles(Role.GM)
   @Get()
@@ -40,7 +45,7 @@ export class ManagersController {
     return this.service.findAll();
   }
 
-  @ApiOperation({ summary:  'Get a manager by ID (GM only)' }) // ✅ AJOUTE
+  @ApiOperation({ summary: 'Get a manager by ID (GM only)' }) // ✅ AJOUTE
   @Roles(Role.GM)
   @Get(':id')
   findOne(@Param('id') id: string) {

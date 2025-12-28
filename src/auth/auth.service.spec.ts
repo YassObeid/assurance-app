@@ -34,8 +34,8 @@ describe('AuthService', () => {
     }).compile();
 
     service = module.get(AuthService);
-    usersService = module.get(UsersService) as any;
-    jwtService = module.get(JwtService) as any;
+    usersService = module.get(UsersService);
+    jwtService = module.get(JwtService);
   });
 
   // changed code - Groupe 1 : tests validateUser (email + password)

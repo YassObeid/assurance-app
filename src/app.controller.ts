@@ -1,4 +1,3 @@
-
 import { Controller, Get } from '@nestjs/common';
 import { AppService } from './app.service';
 import * as pkg from '../package.json';

@@ -6,5 +6,4 @@ export class CreateDelegateDto {
   @IsString() regionId: string;
   @IsString() @IsNotEmpty() managerId: string;
   @IsOptional() @IsString() userId?: string;
-
 }

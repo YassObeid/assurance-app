@@ -14,8 +14,19 @@ import { ConfigModule } from '@nestjs/config';
 import { SystemController } from './system/system.controller';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true}),PrismaModule, DelegatesModule, MembersModule, RegionsModule, ManagersModule, UsersModule, AuthModule, PaymentsModule, ReportsModule],
-  controllers: [AppController,SystemController, ],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    PrismaModule,
+    DelegatesModule,
+    MembersModule,
+    RegionsModule,
+    ManagersModule,
+    UsersModule,
+    AuthModule,
+    PaymentsModule,
+    ReportsModule,
+  ],
+  controllers: [AppController, SystemController],
   providers: [AppService],
 })
 export class AppModule {}

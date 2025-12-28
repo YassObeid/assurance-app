@@ -41,7 +41,7 @@ describe('MembersService', () => {
     }).compile();
 
     service = module.get(MembersService);
-    prisma = module.get(PrismaService) as jest.Mocked<PrismaService>;
+    prisma = module.get(PrismaService);
     jest.clearAllMocks();
     currentRegionIdsForManagerMock.mockReset();
   });
@@ -72,9 +72,9 @@ describe('MembersService', () => {
 
     it('rejette si le rôle est interdit', async () => {
       const dto = { cin: 'CIN', fullName: 'Ali' } as any;
-      await expect(service.create(dto, { role: 'USER' })).rejects.toBeInstanceOf(
-        ForbiddenException,
-      );
+      await expect(
+        service.create(dto, { role: 'USER' }),
+      ).rejects.toBeInstanceOf(ForbiddenException);
     });
   });
 
@@ -133,9 +133,9 @@ describe('MembersService', () => {
   it('findOne lève NotFound si le membre est absent', async () => {
     prisma.member.findFirst.mockResolvedValue(null as any);
 
-    await expect(service.findOne('missing', { role: 'GM' })).rejects.toBeInstanceOf(
-      NotFoundException,
-    );
+    await expect(
+      service.findOne('missing', { role: 'GM' }),
+    ).rejects.toBeInstanceOf(NotFoundException);
   });
 
   it('remove supprime le membre après vérification des droits', async () => {

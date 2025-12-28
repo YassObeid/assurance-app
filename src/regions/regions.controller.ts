@@ -8,7 +8,12 @@ import {
   Delete,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger'; // ✅ AJOUTE
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger'; // ✅ AJOUTE
 import { RegionsService } from './regions.service';
 import { CreateRegionDto } from './dto/create-region.dto';
 import { UpdateRegionDto } from './dto/update-region.dto';
@@ -41,7 +46,7 @@ export class RegionsController {
   }
 
   @ApiOperation({ summary: 'Get a region by ID' }) // ✅ AJOUTE
-  @Roles(Role.GM, Role. REGION_MANAGER, Role. DELEGATE)
+  @Roles(Role.GM, Role.REGION_MANAGER, Role.DELEGATE)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.service.findOne(id);
@@ -58,6 +63,6 @@ export class RegionsController {
   @Roles(Role.GM)
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.service. remove(id);
+    return this.service.remove(id);
   }
 }

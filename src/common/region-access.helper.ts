@@ -14,5 +14,5 @@ export async function currentRegionIdsForManager(
     select: { regionId: true },
   });
 
-  return rows.map(r => r.regionId);
+  return rows.map((r) => r.regionId);
 }
