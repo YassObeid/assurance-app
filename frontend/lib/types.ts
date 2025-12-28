@@ -87,6 +87,13 @@ export interface JWTPayload {
 }
 
 // Create DTOs
+export interface CreateUserDto {
+  name: string;
+  email: string;
+  password: string;
+  role: 'GM' | 'REGION_MANAGER' | 'DELEGATE';
+}
+
 export interface CreateRegionDto {
   name: string;
 }

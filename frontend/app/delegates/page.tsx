@@ -12,19 +12,21 @@ import { FormField } from '@/components/FormField';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
 import { useDelegates, useCreateDelegate } from '@/hooks/useDelegates';
+import { useCreateUser } from '@/hooks/useUsers';
 import { useRegions } from '@/hooks/useRegions';
 import { useManagers } from '@/hooks/useManagers';
 import { getErrorMessage } from '@/lib/api';
 import { Delegate } from '@/lib/types';
 import { isGM } from '@/lib/auth';
 
-// Zod validation schema
+// Zod validation schema - now including user creation fields
 const delegateSchema = z.object({
   name: z.string().min(1, 'Nom requis'),
+  email: z.string().email('Email invalide'),
+  password: z.string().min(6, 'Mot de passe doit avoir au moins 6 caractères'),
   phone: z.string().optional(),
   regionId: z.string().min(1, 'Région requise'),
   managerId: z.string().min(1, 'Manager requis'),
-  userId: z.string().optional(),
 });
 
 type DelegateFormData = z.infer<typeof delegateSchema>;
@@ -38,6 +40,7 @@ export default function DelegatesPage() {
   const { data: regions } = useRegions();
   const { data: managers } = useManagers();
   const createDelegate = useCreateDelegate();
+  const createUser = useCreateUser();
   const canCreate = isGM();
 
   const {
@@ -49,20 +52,35 @@ export default function DelegatesPage() {
     resolver: zodResolver(delegateSchema),
   });
 
-  const onSubmit = (data: DelegateFormData) => {
+  const onSubmit = async (data: DelegateFormData) => {
     setError('');
     setSuccess('');
-    createDelegate.mutate(data, {
-      onSuccess: () => {
-        setSuccess('Délégué créé avec succès');
-        reset();
-        setShowForm(false);
-        setTimeout(() => setSuccess(''), 3000);
-      },
-      onError: (err) => {
-        setError(getErrorMessage(err));
-      },
-    });
+    
+    try {
+      // Step 1: Create the user with DELEGATE role
+      const userResponse = await createUser.mutateAsync({
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        role: 'DELEGATE',
+      });
+
+      // Step 2: Create the delegate linking user to region/manager
+      await createDelegate.mutateAsync({
+        name: data.name,
+        phone: data.phone,
+        regionId: data.regionId,
+        managerId: data.managerId,
+        userId: userResponse.id,
+      });
+
+      setSuccess('Délégué créé avec succès');
+      reset();
+      setShowForm(false);
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError(getErrorMessage(err));
+    }
   };
 
   const columns = [
@@ -108,7 +126,7 @@ export default function DelegatesPage() {
             <CardHeader>
               <CardTitle>Créer un délégué</CardTitle>
               <CardDescription>
-                Ajouter un nouveau délégué à l&apos;organisation
+                Créer un compte utilisateur délégué
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -120,11 +138,31 @@ export default function DelegatesPage() {
                 )}
 
                 <FormField
-                  label="Nom"
+                  label="Nom complet"
                   name="name"
                   placeholder="Nom du délégué"
                   register={register}
                   error={errors.name}
+                  required
+                />
+
+                <FormField
+                  label="Email"
+                  name="email"
+                  type="email"
+                  placeholder="delegue@example.com"
+                  register={register}
+                  error={errors.email}
+                  required
+                />
+
+                <FormField
+                  label="Mot de passe"
+                  name="password"
+                  type="password"
+                  placeholder="Minimum 6 caractères"
+                  register={register}
+                  error={errors.password}
                   required
                 />
 
@@ -179,20 +217,12 @@ export default function DelegatesPage() {
                   )}
                 </div>
 
-                <FormField
-                  label="User ID (optionnel)"
-                  name="userId"
-                  placeholder="ID utilisateur pour l'accès"
-                  register={register}
-                  error={errors.userId}
-                />
-
                 <div className="flex gap-2">
                   <Button
                     type="submit"
-                    disabled={createDelegate.isPending}
+                    disabled={createUser.isPending || createDelegate.isPending}
                   >
-                    {createDelegate.isPending ? 'Création...' : 'Créer'}
+                    {createUser.isPending || createDelegate.isPending ? 'Création...' : 'Créer'}
                   </Button>
                   <Button
                     type="button"

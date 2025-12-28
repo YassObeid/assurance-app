@@ -12,13 +12,16 @@ import { FormField } from '@/components/FormField';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
 import { useManagers, useCreateManager } from '@/hooks/useManagers';
+import { useCreateUser } from '@/hooks/useUsers';
 import { useRegions } from '@/hooks/useRegions';
 import { getErrorMessage } from '@/lib/api';
 import { RegionManager } from '@/lib/types';
 
-// Zod validation schema
+// Zod validation schema - creating both User and Manager
 const managerSchema = z.object({
-  userId: z.string().min(1, 'User ID requis'),
+  name: z.string().min(1, 'Nom requis'),
+  email: z.string().email('Email invalide'),
+  password: z.string().min(6, 'Mot de passe doit avoir au moins 6 caractères'),
   regionId: z.string().min(1, 'Région requise'),
   startAt: z.string().optional(),
 });
@@ -33,6 +36,7 @@ export default function ManagersPage() {
   const { data: managers, isLoading } = useManagers();
   const { data: regions } = useRegions();
   const createManager = useCreateManager();
+  const createUser = useCreateUser();
 
   const {
     register,
@@ -43,20 +47,33 @@ export default function ManagersPage() {
     resolver: zodResolver(managerSchema),
   });
 
-  const onSubmit = (data: ManagerFormData) => {
+  const onSubmit = async (data: ManagerFormData) => {
     setError('');
     setSuccess('');
-    createManager.mutate(data, {
-      onSuccess: () => {
-        setSuccess('Manager créé avec succès');
-        reset();
-        setShowForm(false);
-        setTimeout(() => setSuccess(''), 3000);
-      },
-      onError: (err) => {
-        setError(getErrorMessage(err));
-      },
-    });
+    
+    try {
+      // Step 1: Create the user with REGION_MANAGER role
+      const userResponse = await createUser.mutateAsync({
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        role: 'REGION_MANAGER',
+      });
+
+      // Step 2: Create the manager linking user to region
+      await createManager.mutateAsync({
+        userId: userResponse.id,
+        regionId: data.regionId,
+        startAt: data.startAt,
+      });
+
+      setSuccess('Manager créé avec succès');
+      reset();
+      setShowForm(false);
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError(getErrorMessage(err));
+    }
   };
 
   const columns = [
@@ -109,7 +126,7 @@ export default function ManagersPage() {
             <CardHeader>
               <CardTitle>Créer un manager</CardTitle>
               <CardDescription>
-                Assigner un utilisateur à une région
+                Créer un compte utilisateur et l&apos;assigner à une région
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -121,11 +138,31 @@ export default function ManagersPage() {
                 )}
 
                 <FormField
-                  label="User ID"
-                  name="userId"
-                  placeholder="ID de l'utilisateur"
+                  label="Nom complet"
+                  name="name"
+                  placeholder="Nom du manager"
                   register={register}
-                  error={errors.userId}
+                  error={errors.name}
+                  required
+                />
+
+                <FormField
+                  label="Email"
+                  name="email"
+                  type="email"
+                  placeholder="manager@example.com"
+                  register={register}
+                  error={errors.email}
+                  required
+                />
+
+                <FormField
+                  label="Mot de passe"
+                  name="password"
+                  type="password"
+                  placeholder="Minimum 6 caractères"
+                  register={register}
+                  error={errors.password}
                   required
                 />
 
@@ -161,9 +198,9 @@ export default function ManagersPage() {
                 <div className="flex gap-2">
                   <Button
                     type="submit"
-                    disabled={createManager.isPending}
+                    disabled={createUser.isPending || createManager.isPending}
                   >
-                    {createManager.isPending ? 'Création...' : 'Créer'}
+                    {createUser.isPending || createManager.isPending ? 'Création...' : 'Créer'}
                   </Button>
                   <Button
                     type="button"
