@@ -5,11 +5,11 @@ FROM node:22-alpine AS build
 WORKDIR /app
 
 # Copier les fichiers de dépendances
-COPY frontend/package*.json ./
+COPY package*.json ./
 RUN npm ci
 
 # Copier le reste du code frontend
-COPY frontend/ ./
+COPY . ./
 
 # Build Next.js pour production
 RUN npm run build
@@ -19,7 +19,7 @@ FROM node:22-alpine AS runtime
 WORKDIR /app
 
 # Copier les fichiers de dépendances
-COPY frontend/package*.json ./
+COPY package*.json ./
 RUN npm ci --omit=dev
 
 # Copier les fichiers buildés
