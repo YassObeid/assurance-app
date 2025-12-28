@@ -1,242 +1,174 @@
-```markdown
-📘 Assurance App – Backend NestJS (README Complet)
-# Assurance App – Backend NestJS
+# Assurance App - Application de Gestion d'Assurance
 
-Backend d’une application de gestion d’assurance basée sur :
+Application complète de gestion d'assurance avec :
 
-- Un **GM** (General Manager)
-- Des **Region Managers**
-- Des **Delegates**
-- Des **Members**
-- Des **Payments**
-
-Le backend est construit avec **NestJS**, **Prisma** et **PostgreSQL** (via Docker), avec **authentification JWT** et **contrôle d’accès par rôles**.
+- **Frontend Next.js** : Interface moderne et responsive
+- **Backend NestJS** : API REST avec authentification JWT
+- **PostgreSQL** : Base de données
+- Gestion des **GM** (General Manager), **Region Managers**, **Delegates**, **Members** et **Payments**
 
 ---
 
-# 🧱 Stack technique
+## 🚀 Lancement Rapide avec Docker
 
+### Option 1 : Tout lancer avec Docker (Recommandé pour tests)
+
+```bash
+# Lancer tous les services (DB + API + Frontend)
+docker-compose up -d
+
+# Voir les logs
+docker-compose logs -f
+```
+
+**Accès :**
+- 🌐 **Frontend** : http://localhost:3001
+- 🔌 **Backend API** : http://localhost:3000
+- 📚 **API Docs (Swagger)** : http://localhost:3000/docs
+
+### Option 2 : Développement local (Recommandé pour dev actif)
+
+```bash
+# Terminal 1 : Backend
+npm install
+npm run start:dev
+
+# Terminal 2 : Frontend
+cd frontend
+npm install
+npm run dev
+```
+
+**📖 Documentation Docker complète** : Voir [DOCKER_GUIDE.md](./DOCKER_GUIDE.md)
+
+---
+
+## 🧱 Stack Technique
+
+### Backend
 - **Node.js + TypeScript**
 - **NestJS (architecture modulaire)**
 - **Prisma ORM**
-- **PostgreSQL (Docker)**
+- **PostgreSQL**
 - **Auth JWT / Passport**
 - **Validation : class-validator & class-transformer**
 
----
-
-# 🧩 Fonctionnalités
-
-- Gestion des Users (GM, Region Managers, Delegates)
-- Gestion des Regions
-- Affectation des Region Managers (historique)
-- Gestion des Delegates (liés à un Manager & une Region)
-- Gestion des Members (liés à un Delegate)
-- Gestion des Payments (liés à Member & Delegate)
-- Auth JWT : `/auth/login`
-- Sécurisation des routes par rôles (RBAC simple)
+### Frontend
+- **Next.js 15 (App Router)**
+- **TypeScript**
+- **TailwindCSS**
+- **TanStack Query (React Query)**
+- **React Hook Form + Zod**
+- **Axios**
 
 ---
 
-# 🏛️ Architecture (diagramme d’ensemble)
+## 🐳 Docker - Commandes Principales
 
-```mermaid
-flowchart LR
-  C[Client / Front-end]
+```bash
+# Lancer tout
+docker-compose up -d
 
-  subgraph Backend[NestJS API]
-    A[AppModule]
-    AUTH[AuthModule]
-    USERS[UsersModule]
-    REG[RegionsModule]
-    MAN[ManagersModule]
-    DEL[DelegatesModule]
-    MEM[MembersModule]
-    PAY[PaymentsModule]
-    REP[ReportsModule]
-    Prisma[PrismaModule]
-  end
+# Voir les logs en temps réel
+docker-compose logs -f
 
-  subgraph DB[(PostgreSQL)]
-    Tables[User, Region, RegionManager, Delegate, Member, Payment]
-  end
+# Arrêter tout
+docker-compose down
 
-  C --> A
-  A --> AUTH
-  A --> USERS
-  A --> REG
-  A --> MAN
-  A --> DEL
-  A --> MEM
-  A --> PAY
-  A --> REP
-  A --> Prisma
-  Prisma --> DB
+# Rebuilder après modification du code
+docker-compose up -d --build
+
+# Accéder au shell d'un conteneur
+docker-compose exec frontend sh
+docker-compose exec api sh
+
+# Exécuter les migrations Prisma
+docker-compose exec api npx prisma migrate deploy
 ```
 
-🗂️ Modèle de données (Prisma)
+---
 
-```mermaid
-erDiagram
-  USER {
-    string id PK
-    string name
-    string email
-    string password
-    string role
-    datetime createdAt
-    datetime updatedAt
-  }
+## 🚀 Démarrage sans Docker
 
-  REGION {
-    string id PK
-    string name
-  }
+### 1. Base de données
 
-  REGION_MANAGER {
-    string id PK
-    string userId FK
-    string regionId FK
-    datetime startAt
-    datetime endAt
-  }
-
-  DELEGATE {
-    string id PK
-    string name
-    string phone
-    string regionId FK
-    string managerId FK
-    string userId
-  }
-
-  MEMBER {
-    string id PK
-    string cin
-    string fullName
-    string status
-    string delegateId FK
-  }
-
-  PAYMENT {
-    string id PK
-    string memberId FK
-    string delegateId FK
-    decimal amount
-    datetime paidAt
-  }
-
-  USER ||--o{ REGION_MANAGER : manages
-  REGION ||--o{ REGION_MANAGER : has
-  REGION ||--o{ DELEGATE : has
-  REGION_MANAGER ||--o{ DELEGATE : supervises
-  DELEGATE ||--o{ MEMBER : manages
-  MEMBER ||--o{ PAYMENT : pays
-  DELEGATE ||--o{ PAYMENT : collects
-```
-
-🔐 Authentification – flux JWT
-Login (POST /auth/login)
-
-```mermaid
-sequenceDiagram
-  participant C as Client
-  participant AC as AuthController
-  participant AS as AuthService
-  participant DB as PostgreSQL
-
-  C->>AC: POST /auth/login {email, password}
-  AC->>AS: login()
-  AS->>DB: select user by email
-  DB-->>AS: user + password hash
-  AS->>AS: compare password (bcrypt)
-  AS-->>C: return { access_token }
-```
-
-Contenu du JWT :
-```json
-{
-  "sub": "user.id",
-  "email": "user.email",
-  "role": "GM | REGION_MANAGER | DELEGATE",
-  "delegateId": "id du délégué si applicable"
-}
-```
-
-📡 Routes principales
-Auth
-POST /auth/login → retourne un JWT
-Users
-POST /users
-GET /users
-Regions
-POST /regions
-GET /regions
-Managers
-POST /managers
-GET /managers
-Delegates
-POST /delegates
-GET /delegates
-GET /delegates/:id
-Members
-Sécurité renforcée :
-délégué → ses membres uniquement
-GM & Managers → vue globale
-Routes :
-POST /members
-GET /members
-GET /members/:id
-DELETE /members/:id
-Payments
-POST /payments
-GET /payments
-Reports
-GET /reports/members-by-delegate
-GET /reports/members-by-region
-GET /reports/payments-summary
-
-🚀 Démarrage du projet
-1. Cloner
-git clone <URL_DU_REPO>
-cd assurance-app-main/backend
-
-2. Lancer PostgreSQL (Docker)
+```bash
+# Docker uniquement pour PostgreSQL
 docker run -d --name app-postgres \
   -e POSTGRES_USER=app \
   -e POSTGRES_PASSWORD=app \
   -e POSTGRES_DB=appdb \
   -p 5432:5432 \
   postgres:16
+```
 
-3. Configurer .env
-Créer un fichier .env :
-DATABASE_URL="postgresql://app:app@localhost:5432/appdb?schema=public"
-JWT_SECRET="change-me-in-prod"
-JWT_EXPIRES_IN="1h"
+### 2. Backend
 
-4. Installer
+```bash
 npm install
 
-5. Générer DB (Prisma)
-npx prisma migrate dev -n init
+# Configurer .env
+echo 'DATABASE_URL="postgresql://app:app@localhost:5432/appdb?schema=public"' > .env
+echo 'JWT_SECRET="change-me-in-prod"' >> .env
+echo 'JWT_EXPIRES_IN="1h"' >> .env
+
+# Migrations
 npx prisma generate
+npx prisma migrate deploy
 
-6. Lancer l’API
+# Lancer
 npm run start:dev
-
-Accès :
- 👉 http://localhost:3000
-
-🧪 Tests (à venir)
-Tests unitaires services / guards (Jest)
-Tests e2e routes Nest
-
-📌 Notes importantes
-Le contrôle d’accès est déjà implémenté (JWT + Roles).
-Le délégué ne peut JAMAIS choisir son delegateId : il vient uniquement du JWT.
-L’architecture est déjà de niveau production-ready (structure senior + séparation des responsabilités).
-
-
-
 ```
+
+### 3. Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+---
+
+## 📚 Documentation
+
+- **[DOCKER_GUIDE.md](./DOCKER_GUIDE.md)** - Guide complet Docker
+- **[frontend/README.md](./frontend/README.md)** - Documentation frontend
+- **[FRONTEND_IMPLEMENTATION.md](./FRONTEND_IMPLEMENTATION.md)** - Détails techniques
+
+---
+
+## 🔐 Rôles et Permissions
+
+### GM (General Manager)
+- Accès complet à toutes les fonctionnalités
+- Création/gestion : Régions, Managers, Délégués
+
+### REGION_MANAGER
+- Vue sur les délégués de sa région
+- Consultation des membres et paiements
+
+### DELEGATE
+- Gestion de ses membres uniquement
+- Création de paiements pour ses membres
+
+---
+
+## 📡 Endpoints API
+
+- `POST /auth/login` - Connexion
+- `GET /auth/me` - Utilisateur connecté
+- `GET /regions` - Régions
+- `GET /managers` - Managers
+- `GET /delegates` - Délégués
+- `GET /members` - Membres
+- `GET /payments` - Paiements
+- `GET /reports/summary` - Résumé global
+
+Documentation complète : http://localhost:3000/docs
+
+---
+
+## 📄 License
+
+Propriétaire - Usage interne uniquement

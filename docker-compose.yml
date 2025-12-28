@@ -25,14 +25,34 @@ services:
     env_file:
       - .env.docker        # host = db ici
     ports:
-
       - "3000:3000"
-    # Option : si tu veux les logs plus verbeux
     environment:
       - NODE_ENV=production
+      - FRONTEND_URL=http://localhost:3001
     
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: assurance-frontend
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://localhost:3000
+    
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/"]
       interval: 15s
       timeout: 5s
       retries: 5
