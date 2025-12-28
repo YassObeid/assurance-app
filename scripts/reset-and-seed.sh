@@ -40,7 +40,7 @@ if [ "$1" == "--docker" ]; then
     echo ""
     echo "🌱 Exécution du seed dans le container API..."
     docker exec assurance-api npx prisma migrate deploy
-    docker exec assurance-api npm run seed
+    docker exec assurance-api npm run seed:prod
     
 else
     echo "🗑️  Suppression de la base de données et recréation (mode local)..."
