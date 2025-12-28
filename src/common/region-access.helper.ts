@@ -6,10 +6,17 @@ export async function currentRegionIdsForManager(
   prisma: PrismaClient,
   userId: string,
 ): Promise<string[]> {
+  const now = new Date();
   const rows = await prisma.regionManager.findMany({
     where: {
       userId,
-      endAt: null, // seulement les affectations encore actives
+      startAt: {
+        lte: now, // doit avoir commencé
+      },
+      OR: [
+        { endAt: null }, // pas de date de fin = actif indéfiniment
+        { endAt: { gte: now } }, // ou date de fin dans le futur
+      ],
     },
     select: { regionId: true },
   });
